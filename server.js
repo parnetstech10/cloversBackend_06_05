@@ -14,6 +14,7 @@ import roomRoutes from './routes/roomRoutes.js'
 import roomBookRoutes from './routes/roomBookRoutes.js';
 import authRouts from './routes/adminRoutes.js'
 import morgan from 'morgan';
+import employeeRoutes from './routes/employeeRouter.js';
 
 // Load environment variables
 dotenv.config();
@@ -42,6 +43,8 @@ app.use('/api/memberships', membershipRoutes);
 app.use("/api/subscription",subscriptionRoutes)
 app.use("/api/room",roomRoutes);
 app.use('/api/room/booking',roomBookRoutes);
+
+app.use('/api/employee', employeeRoutes);
 
 
 app.use("/", (req, res) => {
