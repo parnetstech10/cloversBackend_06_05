@@ -1,60 +1,87 @@
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { check, validationResult } from "express-validator";
+
+const validateMember = [
+  check("Membership_No").notEmpty().withMessage("Membership number is required"),
+  check("Member_Name").notEmpty().withMessage("Member name is required"),
+  check("Mobile_Number").isNumeric().withMessage("Mobile number must be numeric"),
+  check("email").isEmail().withMessage("Valid email is required"),
+];
+
+const generateMembershipNo = async () => {
+  const lastMember = await User.findOne().sort({ _id: -1 });
+  const lastNumber = lastMember ? parseInt(lastMember.Membership_No.slice(5)) : 0;
+  return `CCLMH${String(lastNumber + 1).padStart(3, "0")}`;
+};
+
+// Generate unique App_No
+const generateAppNo = async () => {
+  const lastMember = await User.findOne().sort({ _id: -1 });
+  const lastAppNo = lastMember ? parseInt(lastMember.App_No) : 0;
+  return String(lastAppNo + 1).padStart(3, "0");
+};
 
 export const registerUser = async (req, res) => {
-  const { name, email, password,phone, role, membershipStatus, membershipExpiryDate } = req.body;
+  for (let validation of validateMember) {
+    await validation.run(req);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array() });
+    }
+  }
+
 
   try {
-    // Check if user exists
-    const userExists = await User.findOne({ email:email });
+    const {  Member_Name, Mobile_Number, email, password, role, membershipStatus, membershipExpiryDate } = req.body;
+    const Membership_No = await generateMembershipNo();
+    const App_No = await generateAppNo();
 
+    // Check if email or phone exists
+    const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'User email Id already exists' });
+      return res.status(400).json({ message: "User email already exists" });
     }
-    const checkphone = await User.findOne({ phone:phone });
+    const phoneExists = await User.findOne({ Mobile_Number });
+    if (phoneExists) {
+      return res.status(400).json({ message: "User phone number already exists" });
+    }
 
-    if (checkphone) {
-      return res.status(400).json({ message: 'User phone number already exists' });
-    }
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
-    const user = await User.create({
-      name,
+    // Create member
+    const newMember = new User({
+      Membership_No,
+      Member_Name,
+      Mobile_Number,
       email,
       password: hashedPassword,
       role,
-      phone,
-      membershipStatus, // Add membership status
-      membershipExpiryDate, // Add membership expiry date
+      membershipStatus,
+      membershipExpiryDate,
+      App_No
     });
 
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone,
-        role: user.role,
-        membershipStatus: user.membershipStatus,
-        membershipExpiryDate: user.membershipExpiryDate,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
-    }
+    await newMember.save();
+    res.status(201).json({
+      id: newMember._id,
+      Member_Name: newMember.Member_Name,
+      email: newMember.email,
+      Mobile_Number: newMember.Mobile_Number,
+      role: newMember.role,
+      membershipStatus: newMember.membershipStatus,
+      membershipExpiryDate: newMember.membershipExpiryDate,
+      token: generateToken(newMember._id),
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message:error.message });
-  }
+    res.status(400).json({ error: error.message });
+  } 
 };
 
-// @desc    Authenticate user & get token
-// @route   POST /api/users/login
-// @access  Public
+
 export const authUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -65,13 +92,14 @@ export const authUser = async (req, res) => {
       res.json({
         token: generateToken(user._id),
         user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone:user.phone,
-          membershipStatus: user.membershipStatus,
-          membershipExpiryDate: user.membershipExpiryDate,
+          id: newMember._id,
+          Member_Name: newMember.Member_Name,
+          email: newMember.email,
+          Mobile_Number: newMember.Mobile_Number,
+          role: newMember.role,
+          membershipStatus: newMember.membershipStatus,
+          membershipExpiryDate: newMember.membershipExpiryDate,
+          token: generateToken(newMember._id),
         },
       });
     } else {
@@ -124,3 +152,24 @@ export const getAllusers=async(req,res)=>{
     
   }
 }
+
+export const updateMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    if (req.files?.Aadhar_Image) {
+      updateData.Aadhar_Image = req.files.Aadhar_Image[0].filename;
+    }
+    if (req.files?.Pan_Image) {
+      updateData.Pan_Image = req.files.Pan_Image[0].filename;
+    }
+    
+    const updatedMember = await User.findByIdAndUpdate(id, updateData, { new: true });
+    if (!updatedMember) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+    res.status(200).json(updatedMember);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
