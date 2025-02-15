@@ -1,51 +1,36 @@
-import mongoose  from 'mongoose';
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: [true, 'Please enter a name'],
-    },
-    email: {
-      type: String,
-      required: [true, 'Please enter an email'],
-      unique: true,
-    },
-    phone:{
-      type: String,
-      required: [true, 'Please enter a phone'],
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: [true, 'Please enter a password'],
-    },
-    membershipStatus: {
-      type: String,
-      enum: ['Active', 'Expired', 'Pending'],
-      default: 'Pending',
-    },
-    memberType:{
-      type:String,
-      // default:"Guest"
-    },
-    memberID:{
-    type:String
-    },
-    membershipExpiryDate: {
-      type: Date,
-      // default: () => {
-      //   const today = new Date(); // Get the current date
-      //   today.setDate(today.getDate() + 1); // Add 1 day to the current date
-      //   return today; // Return the updated date
-      // },
-    },
-    role: {
-      type: String,
-      enum: ['Member', 'Employee', 'Admin'],
-      default: 'Member',
-    },
+    membershipStatus: { type: String, required: true, enum: ["Pending", "Active", "Inactive"] },
+    role: { type: String, required: true, enum: ["Member", "Admin", "Guest"] },
+    App_No: { type: Number, required: true },
+    Membership_No: { type: String, required: true, unique: true },
+    Member_Name: { type: String, required: true },
+    "A to Z": { type: String },
+    Mobile_Number: { type: Number, required: true, unique: true },
+    Address: { type: String, },
+    Slab: { type: Number, },
+    Full_Amount: { type: Number, },
+    Remarks: { type: String },
+    Ocupation: { type: String },
+    DoB: { type: String, required: true },
+    Blood_Gp: { type: String },
+    "Phone No": { type: Number },
+    "Office No": { type: Number, default: null },
+    Aadhar_No: { type: String, unique: true },
+    Pan: { type: String, unique: true },
+    email: { type: String, unique: true },
+    "C/O": { type: String },
+    Photo: { type: String, },
+    ADHAR: { type: String, },
+    PAN: { type: String, },
     // Add any additional fields needed
+    isDoc: {
+      type: Boolean,
+      default: false
+    },
+    password: { type: String }
   },
   {
     timestamps: true,
