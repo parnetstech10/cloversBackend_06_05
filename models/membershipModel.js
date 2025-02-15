@@ -1,26 +1,23 @@
 // models/membershipModel.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
 const membershipSchema = new Schema({
-  name: { type: String, required: true },
+  // name: { type: String },
   description: { type: String },
   benefits: [String],
   price: { type: Number, required: true },
-  membershipday:{
-    type:Number,
-    default:0
+  membershipday: {
+    type: Number,
+    default: 0,
   },
-  age:{
-    type:String
-  },
-  type: {
+  age: {
     type: String,
-    // enum: ['life', 'platinum', 'senior', 'corporate', 'temporary'],
-    required: true,
   },
+  type: { type: String },
+
   createdAt: { type: Date, default: Date.now },
 });
 
-export default model('Membership', membershipSchema);
+export default model("Membership", membershipSchema);

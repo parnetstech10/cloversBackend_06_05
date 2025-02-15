@@ -4,10 +4,6 @@ import Renewal from '../models/Renewal.js';
 import Joi from 'joi';
 
 const membershipValidationSchema = Joi.object({
-    name: Joi.string().required().messages({
-      'string.empty': 'Name is required.',
-      'any.required': 'Name is required.',
-    }),
     description: Joi.string().required().messages({
       'string.empty': 'Description is required.',
       'any.required': 'Description is required.',
@@ -41,9 +37,8 @@ const membershipValidationSchema = Joi.object({
 
 export const createMembership = async (req, res) => {
     try {
-        const { name, description, benefits, price,age, type,membershipday } = req.body;
+        const {  description, benefits, price,age, type,membershipday } = req.body;
         const newMembership = new Membership({
-            name,
             description,
             benefits,
             price,
@@ -96,10 +91,10 @@ export const getMembershipById = async (req, res) => {
 export const updateMembership = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, benefits, price, type,membershipday ,age} = req.body;
+        const {  description, benefits, price, type,membershipday ,age} = req.body;
         const updatedMembership = await Membership.findByIdAndUpdate(
             id,
-            { name, description, benefits, price, type,membershipday ,age },
+            {  description, benefits, price, type,membershipday ,age },
             { new: true }
         );
         if (!updatedMembership) {
