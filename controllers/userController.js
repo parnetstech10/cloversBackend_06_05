@@ -120,9 +120,9 @@ export const getUserProfile = async (req, res) => {
 
     if (user) {
       res.json({
-        name: user.name,
+        Member_Name: user.Member_Name,
         email: user.email,
-        phone:user.phone,
+        Mobile_Number:user.Mobile_Number,
         membershipStatus: user.membershipStatus,
         membershipExpiryDate: user.membershipExpiryDate,
         // Include any additional fields you want to send
@@ -157,13 +157,19 @@ export const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
-    if (req.files?.Aadhar_Image) {
-      updateData.Aadhar_Image = req.files.Aadhar_Image[0].filename;
-    }
-    if (req.files?.Pan_Image) {
-      updateData.Pan_Image = req.files.Pan_Image[0].filename;
-    }
-    
+ 
+
+    if (req.files.length != 0) {
+      let arr = req.files
+      for (let i = 0; i < arr.length; i++) {
+          if (arr[i].fieldname == "Aadhar_Image") {
+            updateData["Aadhar_Image"] = arr[i].filename
+          }
+          if (arr[i].fieldname == "Pan_Image") {
+            updateData["Pan_Image"] = arr[i].filename
+        }
+      }}
+      
     const updatedMember = await User.findByIdAndUpdate(id, updateData, { new: true });
     if (!updatedMember) {
       return res.status(404).json({ message: "Member not found" });
