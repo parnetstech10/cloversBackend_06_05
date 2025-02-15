@@ -166,6 +166,7 @@ export const addItem = async (req, res) => {
   const { categoryId, subCategoryId } = req.params;
   // We now accept either a single price or an array of measures (or both).
   // e.g., req.body = { name: "Johnnie Walker", price: 500, measures: [{ measure: "30ml", price: 150 }, ...] }
+  
   const { name, price, measures , description } = req.body;
 
   if (!name) {
