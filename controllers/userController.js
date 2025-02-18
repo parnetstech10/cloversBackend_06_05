@@ -86,11 +86,11 @@ export const authUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const newMember = await User.findOne({ email });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (newMember && (await bcrypt.compare(password, newMember.password))) {
       res.json({
-        token: generateToken(user._id),
+        token: generateToken(newMember._id),
         user: {
           id: newMember._id,
           Member_Name: newMember.Member_Name,
@@ -153,12 +153,13 @@ export const getAllusers=async(req,res)=>{
   }
 }
 
+
+
 export const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
  
-
     if (req.files.length != 0) {
       let arr = req.files
       for (let i = 0; i < arr.length; i++) {
@@ -168,8 +169,11 @@ export const updateMember = async (req, res) => {
           if (arr[i].fieldname == "Pan_Image") {
             updateData["Pan_Image"] = arr[i].filename
         }
-      }}
-      
+        if (arr[i].fieldname == "Photo") {
+          updateData["Photo"] = arr[i].filename
+       }
+          }}
+
     const updatedMember = await User.findByIdAndUpdate(id, updateData, { new: true });
     if (!updatedMember) {
       return res.status(404).json({ message: "Member not found" });
