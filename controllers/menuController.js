@@ -121,13 +121,11 @@ export const editSubCategory = async (req, res) => {
   }
 };
 
-
-
 // POST /api/menu/:categoryId/subcategory
 export const addSubCategory = async (req, res) => {
   const { categoryId } = req.params;
   const { subCategoryName } = req.body;
-
+  
   if (!subCategoryName) {
     return res.status(400).json({ message: "Subcategory name is required" });
   }
@@ -164,10 +162,11 @@ export const addSubCategory = async (req, res) => {
 // POST /api/menu/:categoryId/subcategory/:subCategoryId/item
 export const addItem = async (req, res) => {
   const { categoryId, subCategoryId } = req.params;
-  // We now accept either a single price or an array of measures (or both).
-  // e.g., req.body = { name: "Johnnie Walker", price: 500, measures: [{ measure: "30ml", price: 150 }, ...] }
-  
-  const { name, price, measures , description } = req.body;
+
+
+  const { name, price, measures, description } = req.body;
+
+
 
   if (!name) {
     return res.status(400).json({ message: "Item name is required" });
@@ -180,7 +179,7 @@ export const addItem = async (req, res) => {
     if (!menu) {
       return res.status(404).json({ message: "Category not found" });
     }
-
+    
     const subCategory = menu.subCategories.id(subCategoryId);
     if (!subCategory) {
       return res.status(404).json({ message: "Subcategory not found" });
@@ -201,7 +200,18 @@ export const addItem = async (req, res) => {
     if (typeof price !== "undefined") {
       newItem.price = price; // Single price or default price
     }
+
+    if (req.files && req.files.length > 0) {
+      let arr = req.files;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].fieldname === "image") {
+          newItem["image"] = arr[i].filename;
+        }
+      }
+    }
+
     if (Array.isArray(measures) && measures.length > 0) {
+
       newItem.measures = measures;
     } else {
       newItem.measures = [];
@@ -211,12 +221,18 @@ export const addItem = async (req, res) => {
       newItem.description = description;
     }
 
+    
+
     subCategory.items.push(newItem);
+
+   
+
+   
 
     const updatedMenu = await menu.save();
     res.status(200).json(updatedMenu);
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error:error.message });
   }
 };
 

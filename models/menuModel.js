@@ -12,7 +12,7 @@ const itemSchema = new mongoose.Schema({
   price: { type: Number }, // optional if using measures array
   measures: [measureSchema], // optional array of measure objects
   description: { type: String , required:true},
-  // image: { type: String },
+  image: { type: String },
 });
 
 const menuSchema = new mongoose.Schema({

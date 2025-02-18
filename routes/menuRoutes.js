@@ -12,12 +12,27 @@ import {
     deleteCategory,
 } from '../controllers/menuController.js';
 
+import multer from 'multer';
+
+var storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "/public/menu");
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + "_" + file.originalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+
+
 const router = express.Router();
 
 router.get('/', getMenu); // Fetch the menu
 router.post('/category', addMenuCategory); // Add a new category
 router.post('/:categoryId/subcategory', addSubCategory); // Add a new subcategory
-router.post('/:categoryId/subcategory/:subCategoryId/item', addItem); // Add a new item with or without measures
+router.post('/:categoryId/subcategory/:subCategoryId/item', upload.any() ,addItem); // Add a new item with or without measures
 router.delete('/:categoryId/subcategory/:subCategoryId', deleteSubCategory); // Delete a subcategory
 router.delete('/:categoryId/subcategory/:subCategoryId/item/:itemId', deleteItem); // Delete an item
 router.get('/getCategory' , getCategory)
