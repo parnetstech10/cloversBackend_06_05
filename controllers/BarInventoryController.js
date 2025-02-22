@@ -1,4 +1,4 @@
-import BarInventory from '../models/BarInventory.js';
+import BarInventoryModel from "../models/BarInventoryModel.js";
 
 // Add new bar inventory item
 export const addItem = async (req, res) => {
@@ -12,13 +12,91 @@ export const addItem = async (req, res) => {
       pricePerUnit,
       stockQuantity,
       minStockThreshold,
-      supplier,
+      supplierName,
+      supplierContact,
+      supplierEmail,
+      supplierAddress,
+      lastStockUpdate,
       purchaseHistory,
       usageLogs,
-      status
+      status,
     } = req.body;
 
-    const newItem = new BarInventory({
+    const newItem = new BarInventoryModel({
+      itemName,
+      category,
+      brand,
+      volume,
+      unit,
+      pricePerUnit,
+      stockQuantity,
+      minStockThreshold,
+      supplierName,
+      supplierContact,
+      supplierEmail,
+      supplierAddress,
+      lastStockUpdate,
+      purchaseHistory,
+      usageLogs,
+      status: status || "Available", // Default to "Available" if not provided
+    });
+
+    await newItem.save();
+    res.status(201).json({
+      success: true,
+      message: "Item added successfully!",
+      data: newItem,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Get all inventory items
+export const getAllItems = async (req, res) => {
+  try {
+    const items = await BarInventoryModel.find().sort({ _id: -1 });
+    res.status(200).json({
+      success: true,
+      data: items,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Get a single inventory item by ID
+export const getItemById = async (req, res) => {
+  try {
+    const item = await BarInventoryModel.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Item not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: item,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// Update an existing inventory item
+export const updateItem = async (req, res) => {
+  try {
+    const {
       itemName,
       category,
       brand,
@@ -30,80 +108,10 @@ export const addItem = async (req, res) => {
       supplier,
       purchaseHistory,
       usageLogs,
-      status: status || "Available" // Default to "Available" if not provided
-    });
-
-    await newItem.save();
-    res.status(201).json({
-      success: true,
-      message: 'Item added successfully!',
-      data: newItem
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Get all inventory items
-export const getAllItems = async (req, res) => {
-  try {
-    const items = await BarInventory.find();
-    res.status(200).json({
-      success: true,
-      data: items
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Get a single inventory item by ID
-export const getItemById = async (req, res) => {
-  try {
-    const item = await BarInventory.findById(req.params.id);
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: 'Item not found'
-      });
-    }
-    res.status(200).json({
-      success: true,
-      data: item
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
-  }
-};
-
-// Update an existing inventory item
-export const updateItem = async (req, res) => {
-  try {
-    const { 
-      itemName, 
-      category, 
-      brand, 
-      volume, 
-      unit, 
-      pricePerUnit, 
-      stockQuantity, 
-      minStockThreshold, 
-      supplier, 
-      purchaseHistory, 
-      usageLogs,
-      status
+      status,
     } = req.body;
 
-    const updatedItem = await BarInventory.findByIdAndUpdate(
+    const updatedItem = await BarInventoryModel.findByIdAndUpdate(
       req.params.id,
       {
         itemName,
@@ -117,26 +125,26 @@ export const updateItem = async (req, res) => {
         supplier,
         purchaseHistory,
         usageLogs,
-        status
+        status,
       },
       { new: true }
     );
-    
+
     if (!updatedItem) {
       return res.status(404).json({
         success: false,
-        message: 'Item not found'
+        message: "Item not found",
       });
     }
     res.status(200).json({
       success: true,
-      message: 'Item updated successfully',
-      data: updatedItem
+      message: "Item updated successfully",
+      data: updatedItem,
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -144,21 +152,23 @@ export const updateItem = async (req, res) => {
 // Delete an inventory item
 export const deleteItem = async (req, res) => {
   try {
-    const deletedItem = await BarInventory.findByIdAndDelete(req.params.id);
+    const deletedItem = await BarInventoryModel.findByIdAndDelete(
+      req.params.id
+    );
     if (!deletedItem) {
       return res.status(404).json({
         success: false,
-        message: 'Item not found'
+        message: "Item not found",
       });
     }
     res.status(200).json({
       success: true,
-      message: 'Item deleted successfully'
+      message: "Item deleted successfully",
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -168,7 +178,7 @@ export const updateStock = async (req, res) => {
   try {
     const { quantity, purpose } = req.body;
 
-    const updatedItem = await BarInventory.findByIdAndUpdate(
+    const updatedItem = await BarInventoryModel.findByIdAndUpdate(
       req.params.id,
       {
         $inc: { stockQuantity: quantity },
@@ -176,10 +186,10 @@ export const updateStock = async (req, res) => {
           usageLogs: {
             date: new Date(),
             quantityUsed: quantity,
-            purpose: purpose || "Sale"
-          }
+            purpose: purpose || "Sale",
+          },
         },
-        lastStockUpdate: new Date()
+        lastStockUpdate: new Date(),
       },
       { new: true }
     );
@@ -187,7 +197,7 @@ export const updateStock = async (req, res) => {
     if (!updatedItem) {
       return res.status(404).json({
         success: false,
-        message: 'Item not found'
+        message: "Item not found",
       });
     }
 
@@ -204,13 +214,13 @@ export const updateStock = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Stock updated successfully',
-      data: updatedItem
+      message: "Stock updated successfully",
+      data: updatedItem,
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };

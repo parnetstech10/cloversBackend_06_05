@@ -11,12 +11,36 @@ import {
     editSubCategory,
     deleteCategory,
 } from '../controllers/menuController.js';
-
 import multer from 'multer';
 
-var storage = multer.diskStorage({
+// var storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "/public/menu");
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, Date.now() + "_" + file.originalname);
+//   },
+// });
+
+// const upload = multer({ storage: storage });
+
+
+
+
+import path from 'path';
+import fs from 'fs';
+
+const __dirname = path.resolve();
+const uploadPath = path.join(__dirname, 'public/menu');
+
+// Ensure the directory exists
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
+const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "/public/menu");
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "_" + file.originalname);
@@ -24,6 +48,8 @@ var storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
+
+
 
 
 

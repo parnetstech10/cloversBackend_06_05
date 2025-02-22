@@ -16,7 +16,8 @@ const membershipSchema = new Schema({
     type: String,
   },
   type: { type: String },
-
+  discount:{type:String},
+  
   createdAt: { type: Date, default: Date.now },
 });
 

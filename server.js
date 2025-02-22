@@ -17,6 +17,10 @@ import morgan from "morgan";
 import employeeRoutes from "./routes/employeeRouter.js";
 import benefitRoutes from "./routes/benefitRoutes.js";
 import barInventoryRoutes from "./routes/BarInventoryRoutes.js";
+import bodyParser from "body-parser";
+import router from "./routes/barMenuRoutes.js";
+import ResturentInventory from "./routes/ResturentInventory.js";
+
 
 // Load environment variables
 dotenv.config();
@@ -26,6 +30,10 @@ connectDB();
 
 const app = express();
 
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+
+app.use(express.static("public"));
 // Middleware
 app.use(express.json());
 app.use(cors());
@@ -35,6 +43,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/admin", authRouts);
 // Menu route
 app.use("/api/menu", menuRoutes);
+app.use("/api/menuBar", router);
 
 app.use("/api/orders", orderRoutes);
 app.use("/api/facility", facilityRoutes);
@@ -50,12 +59,12 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/benefit", benefitRoutes);
 
 app.use("/api/barInventory", barInventoryRoutes);
+app.use("/api/resturentinventory", ResturentInventory);
 
-app.use(express.static("public"));
 
-app.use("/", (req, res) => {
-  res.status(200).json("Welcom to clovers");
-});
+// app.use("/", (req, res) => {
+//   res.status(200).json("Welcom to clovers");
+// });
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

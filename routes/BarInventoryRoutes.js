@@ -1,11 +1,11 @@
 import express from "express";
-import { addItem } from "../controllers/menuController.js";
+import { addItem, getAllItems } from "../controllers/BarInventoryController.js";
 
-const barInventoryRoutes = express.Router();    
+const barInventoryRoutes = express.Router();
 
-barInventoryRoutes.post('/add',addItem)
-// barInventoryRoutes.get('/get',getBarInventory)
+barInventoryRoutes.post("/add", addItem);
+barInventoryRoutes.get("/get", getAllItems);
 // barInventoryRoutes.post('/edit/:id',editBarInventory)
 // barInventoryRoutes.delete('/delete/:id',deleteBarInventory)
 
-export default barInventoryRoutes
+export default barInventoryRoutes;

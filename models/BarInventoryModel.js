@@ -1,20 +1,20 @@
 import mongoose from "mongoose";
 
 const barInventorySchema = new mongoose.Schema({
-  itemName: { type: String, required: true, trim: true },
+  itemName: { type: String, trim: true },
   category: {
     type: String,
     enum: ["Liquor", "Beer", "Wine", "Mixer", "Other"],
     required: true,
   },
-  brand: { type: String, required: true },
-  volume: { type: Number, required: true, min: 0 }, // In milliliters (ml)
+  brand: { type: String },
+  volume: { type: Number, min: 0 }, // In milliliters (ml)
   unit: { type: String, enum: ["ml", "liters", "bottles"], default: "ml" }, // Unit type
-  pricePerUnit: { type: Number, required: true, min: 0 },
-  stockQuantity: { type: Number, required: true, min: 0 }, // Current stock level
-  minStockThreshold: { type: Number, required: true, min: 0 }, // Alert for low stock
+  pricePerUnit: { type: Number, min: 0 },
+  stockQuantity: { type: Number, min: 0 }, // Current stock level
+  minStockThreshold: { type: Number, min: 0 }, // Alert for low stock
 
-  supplierName: { type: String, required: true },
+  supplierName: { type: String },
   supplierContact: { type: String },
   supplierEmail: { type: String },
   supplierAddress: { type: String },
@@ -23,14 +23,14 @@ const barInventorySchema = new mongoose.Schema({
   purchaseHistory: [
     {
       date: { type: Date, default: Date.now },
-      quantityAdded: { type: Number, required: true, min: 0 },
-      cost: { type: Number, required: true, min: 0 },
+      quantityAdded: { type: Number, min: 0 },
+      cost: { type: Number, min: 0 },
     },
   ],
   usageLogs: [
     {
       date: { type: Date, default: Date.now },
-      quantityUsed: { type: Number, required: true, min: 0 },
+      quantityUsed: { type: Number, min: 0 },
       purpose: {
         type: String,
         enum: ["Sale", "Breakage", "Spillage", "Other"],
@@ -57,6 +57,6 @@ barInventorySchema.pre("save", function (next) {
   next();
 });
 
-const BarInventory = mongoose.model("BarInventory", barInventorySchema);
+const BarInventoryModel = mongoose.model("BarInventory", barInventorySchema);
 
-export default BarInventory;
+export default BarInventoryModel;
