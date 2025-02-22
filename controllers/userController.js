@@ -68,12 +68,7 @@ export const registerUser = async (req, res) => {
     await newMember.save();
     res.status(201).json({
       id: newMember._id,
-      Member_Name: newMember.Member_Name,
-      email: newMember.email,
-      Mobile_Number: newMember.Mobile_Number,
-      role: newMember.role,
-      membershipStatus: newMember.membershipStatus,
-      membershipExpiryDate: newMember.membershipExpiryDate,
+     ...newMember,
       token: generateToken(newMember._id),
     });
   } catch (error) {
@@ -89,18 +84,13 @@ export const authUser = async (req, res) => {
     const newMember = await User.findOne({ email });
 
     if (newMember && (await bcrypt.compare(password, newMember.password))) {
+    newMember.token=generateToken(newMember._id);
+
+    newMember.id=newMember._id;
+    
       res.json({
         token: generateToken(newMember._id),
-        user: {
-          id: newMember._id,
-          Member_Name: newMember.Member_Name,
-          email: newMember.email,
-          Mobile_Number: newMember.Mobile_Number,
-          role: newMember.role,
-          membershipStatus: newMember.membershipStatus,
-          membershipExpiryDate: newMember.membershipExpiryDate,
-          token: generateToken(newMember._id),
-        },
+        user:newMember,
       });
     } else {
     return  res.status(401).json({ message: 'Invalid email or password' });
@@ -119,14 +109,7 @@ export const getUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id).select('-password');
 
     if (user) {
-      res.json({
-        Member_Name: user.Member_Name,
-        email: user.email,
-        Mobile_Number:user.Mobile_Number,
-        membershipStatus: user.membershipStatus,
-        membershipExpiryDate: user.membershipExpiryDate,
-        // Include any additional fields you want to send
-      });
+      res.json(user);
     } else {
       res.status(404).json({ message: 'User not found' });
     }
