@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
     DoB: { type: String},
     Blood_Gp: { type: String },
     "Phone No": { type: Number },
-    "Office No": { type: Number, default: null },
+    "Office No": { type: String, default: null },
     Aadhar_No: { type: String, unique: true },
     Pan: { type: String, unique: true },
     email: { type: String, unique: true },

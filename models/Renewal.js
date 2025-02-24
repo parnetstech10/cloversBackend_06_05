@@ -13,7 +13,7 @@ const RenewalSchema = new mongoose.Schema({
     default: 0
   },
   membershipExpairy: {
-    type: String
+    type: Date
   },
   benefit: [],
   payId: {

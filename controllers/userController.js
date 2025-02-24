@@ -10,11 +10,11 @@ const validateMember = [
   check("email").isEmail().withMessage("Valid email is required"),
 ];
 
-// const generateMembershipNo = async () => {
-//   const lastMember = await User.findOne().sort({ _id: -1 });
-//   const lastNumber = lastMember ? parseInt(lastMember.Membership_No.slice(5)) : 0;
-//   return `CCLMH${String(lastNumber + 1).padStart(3, "0")}`;
-// };
+const generateMembershipNo = async () => {
+  const lastMember = await User.findOne().sort({ _id: -1 });
+  const lastNumber = lastMember ? parseInt(lastMember.Membership_No.slice(5)) : 0;
+  return `CCLMSU${String(lastNumber + 1).padStart(3, "0")}`;
+};
 
 // Generate unique App_No
 const generateAppNo = async () => {
@@ -35,7 +35,7 @@ export const registerUser = async (req, res) => {
 
   try {
     const {  Member_Name, Mobile_Number, email, password, role, membershipStatus, membershipExpiryDate } = req.body;
-    // const Membership_No = await generateMembershipNo();
+    const Membership_No = await generateMembershipNo();
     const App_No = await generateAppNo();
 
     // Check if email or phone exists
@@ -54,7 +54,7 @@ export const registerUser = async (req, res) => {
 
     // Create member
     const newMember = new User({
-   
+      Membership_No,
       Member_Name,
       Mobile_Number,
       email,
