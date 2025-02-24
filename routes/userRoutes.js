@@ -25,7 +25,7 @@ const upload = multer({ storage: storage });
 router.post('/register', registerUser);
 router.post('/login', authUser);
 router.get("/getAllusers",getAllusers);
-router.put("/updatemember",upload.any(),protect,updateMember)
+router.put("/updatemember/:id",upload.any(),protect,updateMember)
 // Protected routes
 router.get('/profile', protect, getUserProfile);
 

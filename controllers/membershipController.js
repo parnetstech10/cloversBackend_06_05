@@ -129,9 +129,9 @@ export const renewMembership = async (req, res) => {
   try {
     const { userName, membershipId, membershipName, benefit, membershipType, day, payId } = req.body;
 
-    const check = await userModel.findById(membershipId);
+    const check = await userModel.findByIdAndUpdate(membershipId,{$set:req.body},{new:true});
     if (!check) return res.status(400).json({ error: "Member not found" });
-    // if()
+    
     const addDayToDate = (daysToAdd) => {
       let currentDate = new Date();
       currentDate.setDate(currentDate.getDate() + daysToAdd);
