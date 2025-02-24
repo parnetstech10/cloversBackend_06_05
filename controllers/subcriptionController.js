@@ -13,6 +13,23 @@ export const validateMembership = [
   body('subscriptiontype').notEmpty().isString().withMessage('Subscription type must be a string'),
 ];
 
+// export const createMembership = async (req, res) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     return res.status(400).json({ error: errors.array() });
+//   }
+
+//   try {
+//     const membership = new Membership(req.body);
+//     const savedMembership = await membership.save();
+//   return  res.status(201).json(savedMembership);
+//   } catch (err) {
+//     res.status(500).json({ error: 'Internal Server Error '+err.message });
+//   }
+// };
+
+
+
 export const createMembership = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,13 +37,26 @@ export const createMembership = async (req, res) => {
   }
 
   try {
-    const membership = new Membership(req.body);
+    const lastMembership = await Membership.findOne().sort({ createdAt: -1 });
+    let newSubscriptionID = 'CCLMSUB001';
+
+    if (lastMembership && lastMembership.subscriptionID) {
+      const lastIdNumber = parseInt(lastMembership.subscriptionID.replace('CCLMSUB', ''), 10);
+      newSubscriptionID = `CCLMSUB${String(lastIdNumber + 1).padStart(3, '0')}`;
+    }
+
+    const membership = new Membership({ ...req.body, subscriptionID: newSubscriptionID });
     const savedMembership = await membership.save();
-  return  res.status(201).json(savedMembership);
+    
+    return res.status(201).json(savedMembership);
   } catch (err) {
-    res.status(500).json({ error: 'Internal Server Error '+err.message });
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
   }
 };
+
+
+
+
 
 export const getAllMemberships = async (req, res) => {
   try {

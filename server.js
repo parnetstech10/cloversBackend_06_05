@@ -20,6 +20,9 @@ import barInventoryRoutes from "./routes/BarInventoryRoutes.js";
 import bodyParser from "body-parser";
 import router from "./routes/barMenuRoutes.js";
 import ResturentInventory from "./routes/ResturentInventory.js";
+import restaurantReservationRoutes from "./routes/restaurantReservationRoutes.js";
+import attendanceRouter from "./controllers/employeeAttendanceController.js";
+import subAdminRoutes from "./routes/subAdminRoutes.js";
 
 
 // Load environment variables
@@ -61,6 +64,11 @@ app.use("/api/benefit", benefitRoutes);
 app.use("/api/barInventory", barInventoryRoutes);
 app.use("/api/resturentinventory", ResturentInventory);
 
+app.use('/api/subAdmins', subAdminRoutes)
+
+app.use('/api/restaurant/reservation' , restaurantReservationRoutes)
+
+app.use('/api/employee/attendance' , attendanceRouter )
 
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");
