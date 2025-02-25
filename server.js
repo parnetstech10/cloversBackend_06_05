@@ -23,6 +23,7 @@ import ResturentInventory from "./routes/ResturentInventory.js";
 import restaurantReservationRoutes from "./routes/restaurantReservationRoutes.js";
 import attendanceRouter from "./controllers/employeeAttendanceController.js";
 import subAdminRoutes from "./routes/subAdminRoutes.js";
+import tableRoutes from "./routes/tableRouter.js";
 
 
 // Load environment variables
@@ -69,6 +70,8 @@ app.use('/api/subAdmins', subAdminRoutes)
 app.use('/api/restaurant/reservation' , restaurantReservationRoutes)
 
 app.use('/api/employee/attendance' , attendanceRouter )
+
+app.use('/api/restaurant/table' , tableRoutes )
 
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");

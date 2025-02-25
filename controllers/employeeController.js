@@ -255,4 +255,21 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
-export { addEmployee, getEmployee, editEmployee, deleteEmployee };
+const getEmployeesById = async (req,res) =>{
+  const {empId} = req.params;
+   try {
+     const employee = await employeeModel.findById(empId);
+     if(!employee) {
+       return res.json({success:false,message:"Employee not found"})
+     }
+     return res.status(200).json({
+        success:true,
+        message:"Employee fetched successfully",
+        data: employee
+     })
+   } catch (error) {
+    
+   }
+}
+
+export { addEmployee, getEmployee, editEmployee, deleteEmployee , getEmployeesById };
