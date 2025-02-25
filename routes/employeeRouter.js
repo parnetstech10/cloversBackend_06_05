@@ -1,5 +1,5 @@
 import express from "express";
-import { addEmployee, deleteEmployee, editEmployee, getEmployee } from "../controllers/employeeController.js";
+import { addEmployee, deleteEmployee, editEmployee, getEmployee, getEmployeesById } from "../controllers/employeeController.js";
 
 const employeeRoutes = express.Router();
 
@@ -21,5 +21,6 @@ employeeRoutes.post("/add", upload.any()  , addEmployee);
 employeeRoutes.get("/get", getEmployee);
 employeeRoutes.post("/edit/:id", editEmployee);
 employeeRoutes.delete('/delete/:id' , deleteEmployee)
+employeeRoutes.post('/get/:empId' , getEmployeesById)
 
 export default employeeRoutes;
