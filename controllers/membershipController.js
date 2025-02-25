@@ -34,19 +34,30 @@ const membershipValidationSchema = Joi.object({
     'number.positive': 'Membership day must be greater than 0.',
     'any.required': 'Membership day is required.',
   }),
+  discount: Joi.number().integer().positive().required().messages({
+    'number.base': 'Discount must be a number.',
+    'number.positive': 'Discount must be greater than 0.',
+    'any.required': 'Discount is required.',
+  }),
+  creditLimit: Joi.number().integer().positive().required().messages({
+    'number.base': 'Credit Limit  must be a number.',
+    'number.positive': 'Credit Limit must be greater than 0.',
+    'any.required': 'Credit Limit is required.',
+  }),
 });
 
 
 export const createMembership = async (req, res) => {
   try {
-    const { description, benefits, price, age, type, membershipday } = req.body;
+    const { description, benefits, price, age, type, membershipday , creditLimit} = req.body;
     const newMembership = new Membership({
       description,
       benefits,
       price,
       type,
       membershipday,
-      age
+      age,
+      creditLimit
     });
     const { error } = membershipValidationSchema.validate(req.body, { abortEarly: false });
 
@@ -93,10 +104,10 @@ export const getMembershipById = async (req, res) => {
 export const updateMembership = async (req, res) => {
   try {
     const { id } = req.params;
-    const { description, benefits, price, type, membershipday, age } = req.body;
+    const { description, benefits, price, type, membershipday, age ,creditLimit} = req.body;
     const updatedMembership = await Membership.findByIdAndUpdate(
       id,
-      { description, benefits, price, type, membershipday, age },
+      { description, benefits, price, type, membershipday, age , creditLimit},
       { new: true }
     );
     if (!updatedMembership) {
@@ -205,3 +216,28 @@ export const getAllRenewals = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch renewals' });
   }
 };
+
+export const changeMemberStatus = async(req,res) =>{
+  try {
+    const { status } = req.body;
+
+    const updatedRenewal = await Renewal.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedRenewal) {
+      return res.status(404).json({ message: "Membership not found" });
+    }
+
+    res.json({ message: "Status updated", renewal: updatedRenewal });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
+
+

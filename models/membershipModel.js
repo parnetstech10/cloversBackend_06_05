@@ -5,6 +5,7 @@ const { Schema, model } = mongoose;
 
 const membershipSchema = new Schema({
   // name: { type: String },
+  membershipId: { type: String, unique: true },
   description: { type: String },
   benefits: [String],
   price: { type: Number, required: true },
@@ -17,7 +18,7 @@ const membershipSchema = new Schema({
   },
   type: { type: String },
   discount:{type:String},
-  
+  creditLimit: { type: Number },
   createdAt: { type: Date, default: Date.now },
 });
 

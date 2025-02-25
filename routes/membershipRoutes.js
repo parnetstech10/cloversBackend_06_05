@@ -8,7 +8,8 @@ import {
   deleteMembership,
   renewMembership,
   getAllRenewals,
-  getActiveMemberships
+  getActiveMemberships,
+  changeMemberStatus
 } from '../controllers/membershipController.js';
 
 const router = Router();
@@ -21,6 +22,7 @@ router.get('/', getMemberships);
 
 // IMPORTANT: Put /renewals BEFORE the /:id route
 router.get('/renewals', getAllRenewals);
+router.put('/renewals/:id', changeMemberStatus);
 router.get("/activemembership/:id",getActiveMemberships)
 
 // GET membership by ID
