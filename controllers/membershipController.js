@@ -49,7 +49,7 @@ const membershipValidationSchema = Joi.object({
 
 export const createMembership = async (req, res) => {
   try {
-    const { description, benefits, price, age, type, membershipday , creditLimit} = req.body;
+    const { description, benefits, price, age, type,discount, membershipday , creditLimit} = req.body;
     const newMembership = new Membership({
       description,
       benefits,
@@ -57,7 +57,8 @@ export const createMembership = async (req, res) => {
       type,
       membershipday,
       age,
-      creditLimit
+      creditLimit,
+      discount
     });
     const { error } = membershipValidationSchema.validate(req.body, { abortEarly: false });
 
@@ -138,7 +139,8 @@ export const deleteMembership = async (req, res) => {
 // POST /api/memberships/renew
 export const renewMembership = async (req, res) => {
   try {
-    const { userName, membershipId, membershipName, benefit, membershipType, day, payId,amount } = req.body;
+    const { userName, membershipId, membershipName, creditLimit,
+      discount, benefit, membershipType, day, payId,amount } = req.body;
 // console.log("mmm",membershipId);
 
     const check = await userModel.findByIdAndUpdate(membershipId,{$set:req.body},{new:true});
@@ -162,7 +164,9 @@ export const renewMembership = async (req, res) => {
       membershipType,
       membershipExpairy,
       benefit, payId,
-      amount
+      amount,
+      creditLimit,
+      discount
     });
 
     const savedRenewal = await newRenewal.save();
@@ -188,7 +192,6 @@ export const renewMembership = async (req, res) => {
 export const getActiveMemberships = async (req, res) => {
   try {
     let id=req.params.id;
-    console.log("id",id);
     
     const activeMemberships = await Renewal.findOne({ membershipId:id,
       membershipExpairy: { $gt: new Date() } // Only fetch memberships with future expiry dates
@@ -204,6 +207,25 @@ export const getActiveMemberships = async (req, res) => {
     return res.status(500).json({ error: "Failed to fetch active memberships" });
   }
 };
+
+export const getAllActivecard=async(req,res)=>{
+  try {
+    let id=req.params.id;
+    
+    const activeMemberships = await Renewal.find({ membershipId:id,
+      membershipExpairy: { $gt: new Date() } // Only fetch memberships with future expiry dates
+    }).sort({_id:-1});
+
+    // if (!activeMemberships) {
+    //   return res.status(404).json({ error: "No active memberships found" });
+    // }
+
+    return res.status(200).json({success:activeMemberships});
+  } catch (error) {
+    console.error("Error in getActiveMemberships:", error);
+    return res.status(500).json({ error: "Failed to fetch active memberships" });
+  }
+}
 
 export const getAllRenewals = async (req, res) => {
   // console.log('getAllRenewals called');

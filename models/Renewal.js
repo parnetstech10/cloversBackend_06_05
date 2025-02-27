@@ -19,6 +19,13 @@ const RenewalSchema = new mongoose.Schema({
   payId: {
     type: String
   },
+  creditLimit:{
+    type: Number,
+  },
+  discount:{
+    type: Number,
+    default:0
+  },
   status: {
     type: String,
     default: "Pending"
