@@ -15,6 +15,7 @@ const employeeSchema = new mongoose.Schema({
   ifsc: { type: String, required: true },
   aadharPhoto: { type: String, required: true },
   panPhoto: { type: String, required: true },
+  password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
 });
 
@@ -22,7 +23,7 @@ const employeeSchema = new mongoose.Schema({
 employeeSchema.pre("save", async function (next) {
   if (!this.employeeId) {
     const lastEmployee = await mongoose.model("Employee").findOne().sort({ _id: -1 });
-    let newId = "EMP001"; // Default for first employee
+    let newId = "CCLMEMP001"; // Default for first employee
 
     if (lastEmployee && lastEmployee.employeeId) {
       const lastIdMatch = lastEmployee.employeeId.match(/^EMP(\d+)$/); // Match and extract number

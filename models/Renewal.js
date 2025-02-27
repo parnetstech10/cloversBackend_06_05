@@ -4,7 +4,7 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const RenewalSchema = new mongoose.Schema({
   userName: { type: String, required: true },
-  membershipId: { type: ObjectId, required: true, ref: "user" },
+  membershipId: { type: ObjectId, required: true, ref: "User" },
   membershipName: { type: String, required: true },
   membershipType: { type: String },
   qrCode: { type: String }, // will store a data URL (base64)

@@ -230,7 +230,7 @@ export const getAllActivecard=async(req,res)=>{
 export const getAllRenewals = async (req, res) => {
   // console.log('getAllRenewals called');
   try {
-    const data = await Renewal.find().sort({ createdAt: -1 });
+    const data = await Renewal.find({}).sort({ createdAt: -1 }).populate('membershipId'); 
     console.log('Renewals fetched:', data); // debug log
     return res.json(data);
   } catch (error) {
