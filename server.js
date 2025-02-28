@@ -24,7 +24,7 @@ import restaurantReservationRoutes from "./routes/restaurantReservationRoutes.js
 import attendanceRouter from "./controllers/employeeAttendanceController.js";
 import subAdminRoutes from "./routes/subAdminRoutes.js";
 import tableRoutes from "./routes/tableRouter.js";
-
+import Transaction from './routes/transactionRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -72,6 +72,7 @@ app.use('/api/restaurant/reservation' , restaurantReservationRoutes)
 app.use('/api/employee/attendance' , attendanceRouter )
 
 app.use('/api/restaurant/table' , tableRoutes )
+app.use("/api/user/transaction",Transaction);
 
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");

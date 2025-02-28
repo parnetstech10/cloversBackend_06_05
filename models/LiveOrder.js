@@ -1,10 +1,15 @@
 import mongoose from 'mongoose';
+const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const liveOrderSchema = new mongoose.Schema(
   {
     table: {
       type: String,
       required: true,
+    },
+    userId:{
+      type:ObjectId,
+      ref:"User"
     },
     items: [
       {
@@ -17,13 +22,34 @@ const liveOrderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+
     date: {
       type: Date,
       default: Date.now,
     },
+    card: {
+      type: String
+    },
+    category: {
+      type: String,
+    },
+    discount: {
+      type: Number,
+      default: 0
+    },
+    cardId: {
+      type: ObjectId
+    },
     status: {
       type: String,
       default: 'Preparing',
+    },
+    card: {
+      type: String,
+    },
+    paymentMethod: {
+      type: String,
+      default: "Inpogress",
     },
   },
   { timestamps: true }

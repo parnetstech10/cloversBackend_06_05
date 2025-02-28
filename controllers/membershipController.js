@@ -212,7 +212,7 @@ export const getAllActivecard=async(req,res)=>{
   try {
     let id=req.params.id;
     
-    const activeMemberships = await Renewal.find({ membershipId:id,
+    const activeMemberships = await Renewal.find({ membershipId:id,status:"Approved",
       membershipExpairy: { $gt: new Date() } // Only fetch memberships with future expiry dates
     }).sort({_id:-1});
 

@@ -1,7 +1,25 @@
 import LiveOrder from '../models/LiveOrder.js';
 import { getCategoryMapping } from '../utils/menuUtils.js';
-
+import membershipCard from '../models/Renewal.js';
+import transactionModel from '../models/transactionModel.js';
 // Get all live orders
+
+const transaction = async (cardId, amount) => {
+  try {
+
+    let card = await membershipCard.findById(cardId);
+    if (card) {
+      card.creditLimit = card.creditLimit - amount;
+      await card.save()
+      await transactionModel.create({ amount, type: "dr", category: card?.membershipName, description: "Membership Cart payment", user: card.membershipId });
+    }
+
+  } catch (error) {
+    console.log(error);
+
+  }
+}
+
 export const getLiveOrders = async (req, res) => {
   try {
     const orders = await LiveOrder.find().sort({ createdAt: -1 });
@@ -14,7 +32,7 @@ export const getLiveOrders = async (req, res) => {
 // Create a new live order
 export const createLiveOrder = async (req, res) => {
   try {
-    const { table, items } = req.body;
+    const { table, items, card, userId, cardId, total, carddiscount } = req.body;
 
     // Get the category mapping
     const categoryMapping = await getCategoryMapping();
@@ -27,24 +45,33 @@ export const createLiveOrder = async (req, res) => {
 
     // Create the "food" order if there are any food items
     if (foodItems.length > 0) {
+      let foodtotal = foodItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
       const foodOrder = new LiveOrder({
         table,
         items: foodItems,
-        total: foodItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        category: "resturant",
+        total: foodtotal - (foodtotal * carddiscount / 100),
+        card, discount: (foodtotal * carddiscount / 100), cardId, userId
+
       });
       await foodOrder.save();
     }
 
     // Create the "alcohol" order if there are any alcohol items
     if (alcoholItems.length > 0) {
+      let alcoholprice = alcoholItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
       const alcoholOrder = new LiveOrder({
         table,
         items: alcoholItems,
-        total: alcoholItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        category: "bar",
+        total: alcoholprice - (alcoholItems * carddiscount / 100),
+        card, discount: (alcoholItems * carddiscount / 100), cardId, userId
       });
       await alcoholOrder.save();
     }
-
+    if (cardId && total) {
+      transaction(cardId, total,)
+    }
     res.status(201).json({ message: 'Orders created successfully' });
   } catch (err) {
     console.error('Error creating live orders:', err);
@@ -68,6 +95,17 @@ export const updateLiveOrderStatus = async (req, res) => {
   }
 };
 
+export const getAllLiveorderbycat = async (req, res) => {
+  try {
+    let cat = req.params.cat;
+    let data = await LiveOrder.find({ category: cat }).sort({ _id: -1 });
+    return res.status(200).json({ success: data });
+  } catch (error) {
+    console.log(error);
+
+  }
+}
+
 // Move live order to history orders
 export const moveOrderToHistory = async (req, res) => {
   try {
@@ -89,17 +127,16 @@ export const moveOrderToHistory = async (req, res) => {
 
 // Delete a live order
 export const deleteLiveOrder = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const deletedOrder = await LiveOrder.findByIdAndDelete(id);
-  
-      if (!deletedOrder) {
-        return res.status(404).json({ message: 'Order not found' });
-      }
-  
-      res.status(200).json({ message: 'Live order deleted successfully' });
-    } catch (err) {
-      res.status(500).json({ message: 'Failed to delete live order', error: err });
+  try {
+    const { id } = req.params;
+    const deletedOrder = await LiveOrder.findByIdAndDelete(id);
+
+    if (!deletedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
     }
-  };
-  
+
+    res.status(200).json({ message: 'Live order deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete live order', error: err });
+  }
+};
