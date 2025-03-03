@@ -41,7 +41,7 @@ export const createLiveOrder = async (req, res) => {
     const foodItems = items.filter(
       item => categoryMapping[item.name] === 'veg' || categoryMapping[item.name] === 'non-veg'
     );
-    const alcoholItems = items.filter(item => categoryMapping[item.name] === 'alcohol');
+    const alcoholItems = items.filter(item => categoryMapping[item.name] !== 'veg' && categoryMapping[item.name] !== 'non-veg');
 
     // Create the "food" order if there are any food items
     if (foodItems.length > 0) {
@@ -64,8 +64,8 @@ export const createLiveOrder = async (req, res) => {
         table,
         items: alcoholItems,
         category: "bar",
-        total: alcoholprice - (alcoholItems * carddiscount / 100),
-        card, discount: (alcoholItems * carddiscount / 100), cardId, userId
+        total: alcoholprice - (alcoholprice * carddiscount / 100),
+        card, discount: (alcoholprice * carddiscount / 100), cardId, userId
       });
       await alcoholOrder.save();
     }
@@ -98,11 +98,41 @@ export const updateLiveOrderStatus = async (req, res) => {
 export const getAllLiveorderbycat = async (req, res) => {
   try {
     let cat = req.params.cat;
-    let data = await LiveOrder.find({ category: cat }).sort({ _id: -1 });
+    let data = await LiveOrder.find({ category: cat }).sort({ _id: -1 }).populate("userId");
     return res.status(200).json({ success: data });
   } catch (error) {
     console.log(error);
 
+  }
+}
+
+export const Liveorderbycat = async (req, res) => {
+  try {
+    let cat = req.params.cat;
+    
+    // Fetch orders where category matches AND status is NOT "Completed" OR "Cancelled"
+    let data = await LiveOrder.find({ 
+      category: cat, 
+      status: { $nin: ["Served", "Cancelled"] } // Excludes "Completed" & "Cancelled" orders
+    })
+    .sort({ _id: -1 })
+    .populate("userId");
+
+    return res.status(200).json({ success: data });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+export const getAllOrderByUserId=async(req,res)=>{
+  try {
+    let id =req.params.id;
+    let data=await LiveOrder.find({userId:id}).sort({_id:-1});
+    return res.status(200).json({success:data});
+  } catch (error) {
+    console.log(error);
   }
 }
 

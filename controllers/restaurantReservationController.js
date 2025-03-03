@@ -1,6 +1,25 @@
 import RestaurantReservationModel from "../models/restaurantReservationModel.js";
-
+import { getCategoryMapping } from "../utils/menuUtils.js";
+import membershipCard from '../models/Renewal.js';
+import transactionModel from '../models/transactionModel.js';
 // Create a new reservation
+const transaction = async (cardId, amount) => {
+  try {
+
+    let card = await membershipCard.findById(cardId);
+    if (card) {
+      card.creditLimit = card.creditLimit - amount;
+      await card.save()
+      await transactionModel.create({ amount, type: "dr", category: card?.membershipName, description: "Membership Cart payment", user: card.membershipId });
+    }
+
+  } catch (error) {
+    console.log(error);
+
+  }
+}
+
+
 export const createReservation = async (req, res) => {
   try {
     const {
@@ -51,6 +70,115 @@ export const createReservation = async (req, res) => {
       message: "Error creating reservation",
       error: error.message,
     });
+  }
+};
+
+
+export const createReservationApp = async (req, res) => {
+  try {
+    const {
+      reservationId,
+      memberId,
+      memberName,
+      memberPhone,
+      memberEmail,
+      reservationDate,
+      reservationTime,
+      numberOfGuests,
+      tableNumber,
+      preOrder,
+      totalAmount,
+      paymentStatus,
+      referedBy,
+      referedById,
+      reservationType,
+      cardId,
+      cardDiscount,
+      card
+    } = req.body;
+
+    // Get the category mapping
+    const categoryMapping = await getCategoryMapping();
+
+    // Filter items by categories
+    const foodItems = preOrder.filter(
+      item => categoryMapping[item.name] === 'veg' || categoryMapping[item.name] === 'non-veg'
+    );
+    const alcoholItems = preOrder.filter(item => categoryMapping[item.name] !== 'veg' && categoryMapping[item.name] !== 'non-veg');
+
+    // Create the "food" reservation if there are any food items
+    if (foodItems.length > 0) {
+      let foodTotal = foodItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const foodReservation = new RestaurantReservationModel({
+        // reservationId: `${reservationId}-F`,
+        memberId,
+        memberName,
+        memberPhone,
+        memberEmail,
+        reservationDate,
+        reservationTime,
+        numberOfGuests,
+        tableNumber,
+        preOrder: foodItems.map((item)=>{
+        return {
+          ...item,
+          foodItemId:item?._id,
+          foodName:item?.name,
+        }
+        }),
+        totalAmount: foodTotal - (foodTotal * cardDiscount / 100),
+        paymentStatus,
+        referedBy,
+        referedById,
+        reservationType: "Restaurant",
+        card,
+        discount: (foodTotal * cardDiscount / 100),
+        cardId
+      });
+      await foodReservation.save();
+    }
+
+    // Create the "alcohol" reservation if there are any alcohol items
+    if (alcoholItems.length > 0) {
+      let alcoholTotal = alcoholItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      const alcoholReservation = new RestaurantReservationModel({
+        // reservationId: `${reservationId}-B`,
+        memberId,
+        memberName,
+        memberPhone,
+        memberEmail,
+        reservationDate,
+        reservationTime,
+        numberOfGuests,
+        tableNumber,
+        preOrder:  alcoholItems.map((item)=>{
+          return {
+            ...item,
+            foodItemId:item?._id,
+            foodName:item?.name,
+          }
+          }),
+        totalAmount: alcoholTotal - (alcoholTotal * cardDiscount / 100),
+        paymentStatus,
+        referedBy,
+        referedById,
+        reservationType: "Bar",
+        card,
+        discount: (alcoholTotal * cardDiscount / 100),
+        cardId
+      });
+      await alcoholReservation.save();
+    }
+
+    // Process transaction if cardId and totalAmount exist
+    if (cardId && totalAmount) {
+      transaction(cardId, totalAmount);
+    }
+
+    res.status(201).json({ message: 'Reservations created successfully' });
+  } catch (error) {
+    console.error('Error creating reservations:', error);
+    res.status(500).json({ message: 'Failed to create reservations', error: error.message });
   }
 };
 
