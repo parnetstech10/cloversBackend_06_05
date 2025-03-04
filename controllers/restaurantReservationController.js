@@ -76,7 +76,7 @@ export const createReservation = async (req, res) => {
 
 export const createReservationApp = async (req, res) => {
   try {
-    const {
+    let {
       reservationId,
       memberId,
       memberName,
@@ -97,6 +97,9 @@ export const createReservationApp = async (req, res) => {
       card
     } = req.body;
 
+    if (!cardDiscount) {
+      cardDiscount = 0
+    }
     // Get the category mapping
     const categoryMapping = await getCategoryMapping();
 
@@ -109,6 +112,8 @@ export const createReservationApp = async (req, res) => {
     // Create the "food" reservation if there are any food items
     if (foodItems.length > 0) {
       let foodTotal = foodItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      console.log("foodTotal",cardDiscount,foodTotal - (foodTotal * cardDiscount / 100));
+      
       const foodReservation = new RestaurantReservationModel({
         // reservationId: `${reservationId}-F`,
         memberId,
@@ -119,12 +124,12 @@ export const createReservationApp = async (req, res) => {
         reservationTime,
         numberOfGuests,
         tableNumber,
-        preOrder: foodItems.map((item)=>{
-        return {
-          ...item,
-          foodItemId:item?._id,
-          foodName:item?.name,
-        }
+        preOrder: foodItems.map((item) => {
+          return {
+            ...item,
+            foodItemId: item?._id,
+            foodName: item?.name,
+          }
         }),
         totalAmount: foodTotal - (foodTotal * cardDiscount / 100),
         paymentStatus,
@@ -151,13 +156,13 @@ export const createReservationApp = async (req, res) => {
         reservationTime,
         numberOfGuests,
         tableNumber,
-        preOrder:  alcoholItems.map((item)=>{
+        preOrder: alcoholItems.map((item) => {
           return {
             ...item,
-            foodItemId:item?._id,
-            foodName:item?.name,
+            foodItemId: item?._id,
+            foodName: item?.name,
           }
-          }),
+        }),
         totalAmount: alcoholTotal - (alcoholTotal * cardDiscount / 100),
         paymentStatus,
         referedBy,
