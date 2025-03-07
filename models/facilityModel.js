@@ -22,6 +22,10 @@ const featureSchema = new mongoose.Schema({
         required: [true, "Capacity is required"],
         min: [1, "Capacity must be at least 1"],
     },
+    price:{
+        type:Number,
+        default:0,
+    },
 }, { timestamps: true });
 
 export default mongoose.model("Facility", featureSchema);

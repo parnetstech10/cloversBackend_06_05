@@ -76,6 +76,15 @@ export const getallsubcrtionbytype=async(req,res)=>{
   }
 }
 
+export const getallsubcrtionbs=async(req,res)=>{
+  try {
+    let data=await Membership.find({}).sort({_id:-1});
+    return res.status(200).json({success:data});
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 export const getMembershipById = async (req, res) => {
   try {
     const membership = await Membership.findById(req.params.id);

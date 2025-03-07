@@ -136,6 +136,22 @@ export const getAllOrderByUserId=async(req,res)=>{
   }
 }
 
+export const makechangeStatusOrders=async(req,res)=>{
+  try {
+    let {id,status}=req.body;
+    if(!id) return res.status(400).json({error:"Id is required"});
+    if(!status) return res.status(400).json({error:"Status is required"});
+    let data= await LiveOrder.findById(id);
+    if(!data) return res.status(400).json({error:"Data not found"});
+    data.status=status;
+   await data.save()
+    return res.status(200).json({success:"Successfully updated"})
+  } catch (error) {
+    console.log(error);
+    
+  }
+}
+
 // Move live order to history orders
 export const moveOrderToHistory = async (req, res) => {
   try {

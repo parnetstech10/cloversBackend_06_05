@@ -5,7 +5,11 @@ const RoomSchema = new mongoose.Schema({
     roomType: { type: String, required: true },
     price: { type: Number, required: true },
     roomNumber: { type: Number, required: true ,unique:true},
-    availability: { type:String}
+    availability: { type:String},
+    capacity: {
+      type: Number,
+      
+  },
   });
   
   export default mongoose.model('Room', RoomSchema);

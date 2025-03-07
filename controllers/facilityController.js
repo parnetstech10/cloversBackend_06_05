@@ -3,13 +3,14 @@ import Feature from '../models/facilityModel.js';
 // Create a new feature
 export const createFeature = async (req, res) => {
   try {
-    const { name, status, type, capacity } = req.body;
+    const { name, status, type, capacity,price } = req.body;
 
     const newFeature = new Feature({
       name,
       status,
       type,
       capacity,
+      price
     });
 
     await newFeature.save();

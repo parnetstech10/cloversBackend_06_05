@@ -7,6 +7,7 @@ import {
   getAllOrderByUserId,
   getAllLiveorderbycat,
   Liveorderbycat,
+  makechangeStatusOrders,
 } from '../controllers/liveOrderController.js';
 
 const router = express.Router();
@@ -29,5 +30,5 @@ router.post('/:id/move-to-history', moveOrderToHistory);
 
 router.delete('/:id', deleteLiveOrder);
 
-
+router.put('/updatestatus', makechangeStatusOrders);
 export default router;

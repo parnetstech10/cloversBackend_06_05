@@ -203,7 +203,38 @@ export const getAllReservations = async (req, res) => {
     });
   }
 };
+// Get all reservations
+export const getAllReservationsbycat = async (req, res) => {
+  try {
+    let cat=req.params.cat;
+    const reservations = await RestaurantReservationModel.find({reservationType:cat}).sort({_id:-1})
+      .populate("memberId")
+      .populate("preOrder.foodItemId");
 
+    res.status(200).json({ success: true, data: reservations });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching reservations",
+      error: error.message,
+    });
+  }
+};
+export const getAllReservationsbymemberid = async (req, res) => {
+  try {
+    let memberId=req.params.memberId;
+    const reservations = await RestaurantReservationModel.find({memberId:memberId}).sort({_id:-1})
+      .populate("preOrder.foodItemId");
+
+    res.status(200).json({ success: true, data: reservations });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching reservations",
+      error: error.message,
+    });
+  }
+};
 // Get a reservation by ID
 export const getReservationById = async (req, res) => {
   try {
@@ -316,3 +347,19 @@ export const deleteReservation = async (req, res) => {
     });
   }
 };
+
+export const makechangeStatus=async(req,res)=>{
+  try {
+    let {id,status}=req.body;
+    if(!id) return res.status(400).json({error:"Id is required"});
+    if(!status) return res.status(400).json({error:"Status is required"});
+    let data= await RestaurantReservationModel.findById(id);
+    if(!data) return res.status(400).json({error:"Data not found"});
+    data.status=status;
+   await data.save()
+    return res.status(200).json({success:"Successfully updated"})
+  } catch (error) {
+    console.log(error);
+    
+  }
+}

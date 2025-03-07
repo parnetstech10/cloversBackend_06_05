@@ -49,9 +49,15 @@ const reservationSchema = new mongoose.Schema({
       foodName: {
         type: String,
       },
+      image:{
+        type:String
+      },
       quantity: {
         type: Number,
         default: 1,
+      },
+      measure:{
+        type:String
       },
       price: {
         type: Number,
@@ -75,6 +81,10 @@ const reservationSchema = new mongoose.Schema({
   },
   referedById: {
     type: String,
+  },
+  status:{
+    type:String,
+    default:"Pending"
   },
   createdAt: {
     type: Date,
