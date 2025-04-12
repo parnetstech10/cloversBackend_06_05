@@ -25,6 +25,7 @@ const userSchema = new mongoose.Schema(
     Photo: { type: String, },
     ADHAR: { type: String, },
     PAN: { type: String, },
+    walletBalance: { type: Number, default: 0 },
     // Add any additional fields needed
     isDoc: {
       type: Boolean,

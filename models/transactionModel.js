@@ -14,7 +14,7 @@ const transactionSchema = new mongoose.Schema({
   type: {
     type: String,
     required: [true, 'Transaction type is required'],
-    enum: ['cr', 'dr'],
+    // enum: ['cr', 'dr'],
   },
   category: {
     type: String,
@@ -23,6 +23,14 @@ const transactionSchema = new mongoose.Schema({
   description: {
     type: String,
     trim: true,
+  },
+  balanceAfter: {
+    type: Number,
+    required: true
+  },
+  performedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
   date: {
     type: Date,
