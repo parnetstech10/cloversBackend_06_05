@@ -6,6 +6,8 @@ import {
   getUserProfile,
   getAllusers,
   updateMember,
+  updateMemberImg,
+  getMemberImg
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -26,6 +28,9 @@ router.post('/register', registerUser);
 router.post('/login', authUser);
 router.get("/getAllusers",getAllusers);
 router.put("/updatemember/:id",upload.any(),protect,updateMember)
+router.put("/updateMemberImg/:id",upload.any(),updateMemberImg)
+router.get("/getMemberImg/:id",getMemberImg)
+
 // Protected routes
 router.get('/profile', protect, getUserProfile);
 

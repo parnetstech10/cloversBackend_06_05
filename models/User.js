@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    profileImage: { type: String, },
     status: {
       type: String
     },

@@ -12,7 +12,7 @@ const validateMember = [
 
 const generateMembershipNo = async () => {
   const lastMember = await User.findOne().sort({ _id: -1 });
-  const lastNumber = lastMember ? parseInt(lastMember.Membership_No.slice(5)) : 0;
+  const lastNumber = lastMember ? parseInt(lastMember.Membership_No?.slice(5)) : 0;
   return `CCLMSU${String(lastNumber + 1).padStart(3, "0")}`;
 };
 
@@ -107,7 +107,6 @@ export const authUser = async (req, res) => {
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-
     if (user) {
       res.json(user);
     } else {
@@ -125,7 +124,6 @@ const generateToken = (id) => {
   });
 };
 
-
 export const getAllusers=async(req,res)=>{
   try {
     let data=await User.find().sort({_id:-1});
@@ -135,8 +133,6 @@ export const getAllusers=async(req,res)=>{
     
   }
 }
-
-
 
 export const updateMember = async (req, res) => {
   try {
@@ -164,6 +160,48 @@ export const updateMember = async (req, res) => {
       return res.status(404).json({ message: "Member not found" });
     }
     res.status(200).json({msg:"Successfully uploaded",data:updatedMember});
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateMemberImg = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateProfileImg = req.body;
+ 
+    if (req.files.length != 0) {
+      let arr = req.files
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].fieldname == "profileImage") {
+          updateProfileImg["profileImage"] = arr[i].filename
+       }
+          }}
+
+          updateProfileImg["isDoc"]=true;
+          console.log(req.body, req.params,updateProfileImg);
+          
+    const updatedMember = await User.findByIdAndUpdate(id, updateProfileImg, { new: true });
+    if (!updatedMember) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+    res.status(200).json({msg:"Successfully uploaded",data:updatedMember});
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getMemberImg = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const member = await User.findById(id);
+
+    if (!member) {
+      return res.status(404).json({ message: "Member not found" });
+    }
+
+    res.status(200).json({ success: true, data: member });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
