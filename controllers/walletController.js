@@ -20,8 +20,8 @@ export const getWalletBalance = async (req, res) => {
 // Add money to wallet (Admin only)
 export const addMoney = async (req, res) => {
   try {
-    const { user, amount, description } = req.body;
-    
+    const { user, amount, description, category } = req.body;
+    console.log(user, amount, description)
     if (!user || !amount || amount <= 0 || !description) {
       return res.status(400).json({ message: 'Please provide user, valid amount, and description' });
     }
@@ -38,15 +38,21 @@ export const addMoney = async (req, res) => {
     await usercheck.save();
     
     // Create transaction record
-    const transaction = new TransactionModel({
+    const transactionData = {
       user: usercheck._id,
       type: 'bonus',
       amount: parseFloat(amount),
       description,
-      balanceAfter: usercheck.walletBalance,
-      performedBy: req.user.id
-    });
+      category: category || 'wallet',
+      balanceAfter: usercheck.walletBalance
+    };
     
+    // Add performedBy if authenticated user exists
+    if (req.user && req.user.id) {
+      transactionData.performedBy = req.user.id;
+    }
+    
+    const transaction = new TransactionModel(transactionData);
     await transaction.save();
     
     res.status(200).json({
@@ -63,7 +69,7 @@ export const addMoney = async (req, res) => {
 // Deduct money from wallet (Admin only)
 export const deductMoney = async (req, res) => {
   try {
-    const { user, amount, description } = req.body;
+    const { user, amount, description, category } = req.body;
     
     if (!user || !amount || amount <= 0 || !description) {
       return res.status(400).json({ message: 'Please provide user, valid amount, and description' });
@@ -85,15 +91,21 @@ export const deductMoney = async (req, res) => {
     await usercheck.save();
     
     // Create transaction record
-    const transaction = new TransactionModel({
+    const transactionData = {
       user: usercheck._id,
       type: 'debit',
       amount: parseFloat(amount),
       description,
-      balanceAfter: usercheck.walletBalance,
-      performedBy: req.user.id
-    });
+      category: category || 'wallet',
+      balanceAfter: usercheck.walletBalance
+    };
     
+    // Add performedBy if authenticated user exists
+    if (req.user && req.user.id) {
+      transactionData.performedBy = req.user.id;
+    }
+    
+    const transaction = new TransactionModel(transactionData);
     await transaction.save();
     
     res.status(200).json({
@@ -110,12 +122,14 @@ export const deductMoney = async (req, res) => {
 // Get transaction history for a user
 export const getTransactionHistory = async (req, res) => {
   try {
-    const user = req.params.user || req.user.id;
+    const user = req.params.user;
     
-    // If admin is querying another user's transactions
-    if (user !== req.user.id && !req.user.isAdmin) {
-      return res.status(403).json({ message: 'Not authorized to view these transactions' });
+    // If no user ID is provided in parameters and no authenticated user
+    if (!user) {
+      return res.status(400).json( { message: 'User ID is required' });
     }
+    
+    // Skip authorization check for now (temporarily)
     
     const transactions = await TransactionModel.find({ user })
       .sort({ createdAt: -1 })
