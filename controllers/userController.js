@@ -10,12 +10,36 @@ const validateMember = [
   check("email").isEmail().withMessage("Valid email is required"),
 ];
 
+// const generateMembershipNo = async () => {
+//   const lastMember = await User.findOne().sort({ _id: -1 });
+//   const lastNumber = lastMember ? parseInt(lastMember.Membership_No?.slice(5)) : 0;
+//   return `CCLMSU${String(lastNumber + 1).padStart(3, "0")}`;
+// };
 const generateMembershipNo = async () => {
-  const lastMember = await User.findOne().sort({ _id: -1 });
-  const lastNumber = lastMember ? parseInt(lastMember.Membership_No?.slice(5)) : 0;
-  return `CCLMSU${String(lastNumber + 1).padStart(3, "0")}`;
+  try {
+    const lastMember = await User.findOne().sort({ _id: -1 });
+    
+    // Default to 0 if no members exist
+    if (!lastMember || !lastMember.Membership_No) {
+      return "CCLMSU001";
+    }
+    
+    // Extract the numeric part (after the 6-character prefix)
+    const numericPart = lastMember.Membership_No.slice(6);
+    const lastNumber = parseInt(numericPart);
+    
+    // Ensure we have a valid number
+    if (isNaN(lastNumber)) {
+      console.error("Invalid membership number format:", lastMember.Membership_No);
+      return "CCLMSU001"; // Fallback to first number if parsing fails
+    }
+    
+    return `CCLMSU${String(lastNumber + 1).padStart(3, "0")}`;
+  } catch (error) {
+    console.error("Error generating membership number:", error);
+    return "CCLMSU001"; // Fallback in case of any error
+  }
 };
-
 // Generate unique App_No
 const generateAppNo = async () => {
   const lastMember = await User.findOne().sort({ _id: -1 });

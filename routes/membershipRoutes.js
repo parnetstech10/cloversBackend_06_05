@@ -24,8 +24,8 @@ router.get('/', getMemberships);
 // IMPORTANT: Put /renewals BEFORE the /:id route
 router.get('/renewals', getAllRenewals);
 router.put('/renewals/:id', changeMemberStatus);
-router.get("/activemembership/:id",getActiveMemberships)
-router.get("/allactivecard/:id",getAllActivecard)
+router.get("/activemembership/:id",getActiveMemberships);
+router.get("/allactivecard/:id",getAllActivecard);
 
 // GET membership by ID
 router.get('/:id', getMembershipById);
