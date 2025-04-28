@@ -6,6 +6,7 @@ import {
   getUserProfile,
   getAllusers,
   updateMember,
+  deleteUser
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -25,8 +26,8 @@ const upload = multer({ storage: storage });
 router.post('/register', registerUser);
 router.post('/login', authUser);
 router.get("/getAllusers",getAllusers);
-router.put("/updatemember/:id",upload.any(),protect,updateMember)
+router.put("/updatemember/:id",upload.any(),updateMember)
 // Protected routes
 router.get('/profile', protect, getUserProfile);
-
+router.delete("/deletemember/:id",  deleteUser);
 export default router;

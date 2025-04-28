@@ -1,6 +1,6 @@
 import MenuBar from "../models/barMenuModel.js";
 
-// GET /api/menu
+// GET /api/menuBar
 export const getBarMenu = async (req, res) => {
   try {
     const menu = await MenuBar.find({});
@@ -10,7 +10,7 @@ export const getBarMenu = async (req, res) => {
   }
 };
 
-// POST /api/menuBar
+// POST /api/menuBar/category
 export const addBarMenuCategory = async (req, res) => {
   const { categoryName } = req.body;
   if (!categoryName) {
@@ -24,7 +24,7 @@ export const addBarMenuCategory = async (req, res) => {
 
     const newCategory = new MenuBar({
       category: categoryName,
-      subCategories: [],
+      brand: [], // Initialize with empty brand array
     });
     const saved = await newCategory.save();
     res.status(201).json(saved);
@@ -33,6 +33,7 @@ export const addBarMenuCategory = async (req, res) => {
   }
 };
 
+// GET /api/menuBar/getCategory
 export const getCategory = async (req, res) => {
   try {
     const category = await MenuBar.find({});
@@ -51,9 +52,10 @@ export const getCategory = async (req, res) => {
   }
 };
 
+// POST /api/menuBar/editCategory
 export const editCategory = async (req, res) => {
   try {
-    const { categoryName, id } = req.body; // Assuming category name is passed in the request body
+    const { categoryName, id } = req.body;
 
     const category = await MenuBar.findById(id);
     if (!category) {
@@ -75,6 +77,7 @@ export const editCategory = async (req, res) => {
   }
 };
 
+// DELETE /api/menuBar/deleteCategory/:id
 export const deleteCategory = async (req, res) => {
   const { id } = req.params;
   try {
@@ -93,9 +96,10 @@ export const deleteCategory = async (req, res) => {
   }
 };
 
+// PUT /api/menuBar/editSubCategory
 export const editBrand = async (req, res) => {
   try {
-    const { name, id, brandId } = req.body; // Assuming subcategory id is passed in the request body
+    const { name, id, brandId } = req.body;
 
     const menu = await MenuBar.findById(id);
     if (!menu) {
@@ -111,7 +115,7 @@ export const editBrand = async (req, res) => {
     await menu.save();
 
     return res.status(200).json({
-      message: "Category updated successfully",
+      message: "Brand updated successfully",
       data: brand,
     });
   } catch (error) {
@@ -122,13 +126,13 @@ export const editBrand = async (req, res) => {
   }
 };
 
-// POST /api/menu/:categoryId/subcategory
+// POST /api/menuBar/:categoryId/brand
 export const addBrand = async (req, res) => {
   const { categoryId } = req.params;
   const { brandName } = req.body;
 
   if (!brandName) {
-    return res.status(400).json({ message: "brandName name is required" });
+    return res.status(400).json({ message: "Brand name is required" });
   }
 
   try {
@@ -137,16 +141,16 @@ export const addBrand = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    // Check for duplicate subcategory
+    // Check for duplicate brand
     if (
       menu.brand.some(
-        (subCat) => subCat.name.toLowerCase() === brandName.toLowerCase()
+        (brand) => brand.name.toLowerCase() === brandName.toLowerCase()
       )
     ) {
-      return res.status(400).json({ message: "Subcategory already exists" });
+      return res.status(400).json({ message: "Brand already exists" });
     }
 
-    // Add new subcategory
+    // Add new brand
     const newBrand = {
       name: brandName,
       items: [],
@@ -160,40 +164,38 @@ export const addBrand = async (req, res) => {
   }
 };
 
-// POST /api/menu/:categoryId/subcategory/:subCategoryId/item
+// POST /api/menuBar/:categoryId/brand/:brandId/item
 export const addItem = async (req, res) => {
-
   const { categoryId, brandId } = req.params;
-  const { name, price, measures , description } = req.body;
+  const { name, price, measures, description } = req.body;
+  
   if (!name) {
     return res.status(400).json({ message: "Item name is required" });
   }
-  // Price can be optional if using measures array for alcohol items.
-  // measures can be an empty array if item is a standard single-price item.
+  
   try {
     const menu = await MenuBar.findById(categoryId);
     if (!menu) {
       return res.status(404).json({ message: "Category not found" });
     }
+    
     const brand = menu.brand.id(brandId);
     if (!brand) {
-      return res.status(404).json({ message: "brand not found" });
+      return res.status(404).json({ message: "Brand not found" });
     }
 
-    // Check for duplicate item (case-insensitive match if desired)
+    // Check for duplicate item
     if (
       brand.items.some((item) => item.name.toLowerCase() === name.toLowerCase())
     ) {
       return res.status(400).json({ message: "Item already exists" });
     }
 
-    // Add new item. If measures are provided, store them. If price is provided, store it.
-    // If you want price to be optional for items with measures, that's fine.
-    const newItem = { name , description };
+    // Add new item
+    const newItem = { name, description };
     if (typeof price !== "undefined") {
-      newItem.price = price; // Single price or default price
+      newItem.price = price;
     }
-  
 
     if (req.files && req.files.length > 0) {
       let arr = req.files;
@@ -211,16 +213,15 @@ export const addItem = async (req, res) => {
     }
 
     brand.items.push(newItem);
-
     const updatedMenu = await menu.save();
+    
     res.status(200).json(updatedMenu);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// DELETE subcategory
-// DELETE /api/menu/:categoryId/subcategory/:subCategoryId
+// DELETE /api/menuBar/deleteSubCategory/:categoryId/:subCategoryId
 export const deleteSubCategory = async (req, res) => {
   const { categoryId, subCategoryId } = req.params;
 
@@ -230,26 +231,26 @@ export const deleteSubCategory = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const subCategoryIndex = menu.subCategories.findIndex(
-      (subCat) => subCat._id.toString() === subCategoryId
+    // Find the brand index (using brand instead of subCategories)
+    const brandIndex = menu.brand.findIndex(
+      (brand) => brand._id.toString() === subCategoryId
     );
 
-    if (subCategoryIndex === -1) {
-      return res.status(404).json({ message: "Subcategory not found" });
+    if (brandIndex === -1) {
+      return res.status(404).json({ message: "Brand not found" });
     }
 
-    // Remove the subcategory
-    menu.subCategories.splice(subCategoryIndex, 1);
+    // Remove the brand
+    menu.brand.splice(brandIndex, 1);
     await menu.save();
 
-    res.status(200).json({ message: "Subcategory deleted successfully" });
+    res.status(200).json({ message: "Brand deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
 };
 
-// DELETE item
-// DELETE /api/menu/:categoryId/subcategory/:subCategoryId/:itemId
+// DELETE /api/menuBar/:categoryId/subcategory/:subCategoryId/item/:itemId
 export const deleteItem = async (req, res) => {
   const { categoryId, subCategoryId, itemId } = req.params;
 
@@ -259,19 +260,19 @@ export const deleteItem = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const subCategory = menu.subCategories.id(subCategoryId);
-    if (!subCategory) {
-      return res.status(404).json({ message: "Subcategory not found" });
+    const brand = menu.brand.id(subCategoryId);
+    if (!brand) {
+      return res.status(404).json({ message: "Brand not found" });
     }
 
-    const itemIndex = subCategory.items.findIndex(
+    const itemIndex = brand.items.findIndex(
       (item) => item._id.toString() === itemId
     );
     if (itemIndex === -1) {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    subCategory.items.splice(itemIndex, 1);
+    brand.items.splice(itemIndex, 1);
     await menu.save();
 
     res.status(200).json({ message: "Item deleted successfully" });

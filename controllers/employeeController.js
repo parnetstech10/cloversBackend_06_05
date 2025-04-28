@@ -1,10 +1,9 @@
-
 import employeeModel from "../models/employeeModel.js";
 
 const addEmployee = async (req, res) => {
   try {
     const { name, email, address, phone, position, panNo, aadharNo, accountNo, ifsc, bank , password} = req.body;
-
+    console.log(req.body,"wet")
     const newItem = { name, email, address, phone, position, panNo, aadharNo, accountNo, ifsc, bank , password };
 
     // Handle file uploads
@@ -77,21 +76,20 @@ const deleteEmployee = async (req, res) => {
   }
 };
 
-const getEmployeesById = async (req,res) =>{
-  const {empId} = req.params;
-   try {
-     const employee = await employeeModel.findById(empId);
-     if(!employee) {
-       return res.json({success:false,message:"Employee not found"})
-     }
-     return res.status(200).json({
-        success:true,
-        message:"Employee fetched successfully",
-        data: employee
-     })
-   } catch (error) {
+const getEmployeeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await employeeModel.findById(id);
     
-   }
-}
+    if (!employee) {
+      return res.status(404).json({ success: false, error: 'Employee not found' });
+    }
+    
+    res.status(200).json({ success: true, data: employee });
+  } catch (error) {
+    console.error("Error fetching employee:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
-export { addEmployee, getEmployee, editEmployee, deleteEmployee , getEmployeesById };
+export { addEmployee, getEmployee, editEmployee, deleteEmployee, getEmployeeById };

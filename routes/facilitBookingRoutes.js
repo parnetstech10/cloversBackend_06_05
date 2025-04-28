@@ -13,7 +13,7 @@ const router = express.Router();
 router.post("/", createBooking);
 
 // Get all bookings
-router.get("/", getAllBookings);
+router.get("/all", getAllBookings);
 
 // Get a single booking by ID
 router.get("/:id", getBookingById);

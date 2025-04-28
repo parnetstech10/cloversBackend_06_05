@@ -124,12 +124,20 @@ export const getTransactionHistory = async (req, res) => {
   try {
     const user = req.params.user;
     
-    // If no user ID is provided in parameters and no authenticated user
-    if (!user) {
-      return res.status(400).json( { message: 'User ID is required' });
+    // Special case for 'all' - return all transactions (admin only)
+    if (user === 'all') {
+      const transactions = await TransactionModel.find({})
+        .sort({ createdAt: -1 })
+        .populate('user', 'Member_Name')
+        .populate('performedBy', 'name email');
+      
+      return res.status(200).json(transactions);
     }
     
-    // Skip authorization check for now (temporarily)
+    // Regular case - single user transactions
+    if (!user) {
+      return res.status(400).json({ message: 'User ID is required' });
+    }
     
     const transactions = await TransactionModel.find({ user })
       .sort({ createdAt: -1 })

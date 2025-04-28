@@ -27,6 +27,8 @@ import tableRoutes from "./routes/tableRouter.js";
 import Transaction from './routes/transactionRoutes.js';
 import Wallet from './routes/walletRoute.js';
 import SportBookingRoutes from "./routes/sportBooking.js";
+import recipeRoutes from './routes/recipeRoutes.js';
+import payrollRoutes from './routes/payrollRoutes.js'
 // Load environment variables
 dotenv.config();
 
@@ -76,7 +78,9 @@ app.use('/api/restaurant/table' , tableRoutes )
 app.use("/api/user/transaction",Transaction);
 app.use("/api/user/wallet",Wallet);
 app.use("/api/sportbooking",SportBookingRoutes);
+app.use('/api/restaurant', recipeRoutes);
 
+app.use('/api/payroll',payrollRoutes)
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");
 // });

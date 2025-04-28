@@ -17,7 +17,7 @@ const tableSchema = new mongoose.Schema({
     },
     tableType:{
         type: String,
-        enum: ["Restaurant", "Bar"], // Restricts values
+        enum: ["Restaurant", "Bar","Lounge Area","Outdoor"], // Restricts values
         default: "Restaurant", // Default status
     }
 });
