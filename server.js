@@ -27,10 +27,16 @@ import tableRoutes from "./routes/tableRouter.js";
 import Transaction from './routes/transactionRoutes.js';
 import Wallet from './routes/walletRoute.js';
 import SportBookingRoutes from "./routes/sportBooking.js";
+// <<<<<<< HEAD
+import BookfacilityRoutes from "./routes/BookFacility.js"
 import recipeRoutes from './routes/recipeRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js'
+<<<<<<< HEAD
 import facilityCategoryRoutes  from './routes/facilityCategories.js';
 
+=======
+// >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
+>>>>>>> e1146b4c0caf225fcfe75ed6808bee000010bf89
 // Load environment variables
 dotenv.config();
 
@@ -55,9 +61,9 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/menuBar", router);
 
 app.use("/api/orders", orderRoutes);
+app.use("/api/live-orders", liveOrderRoutes);
 app.use("/api/facility", facilityRoutes);
 app.use("/api/facility/booking", facilityBookingRoutes);
-app.use("/api/live-orders", liveOrderRoutes);
 
 app.use("/api/memberships", membershipRoutes);
 app.use("/api/subscription", subscriptionRoutes);
@@ -83,7 +89,10 @@ app.use("/api/sportbooking",SportBookingRoutes);
 app.use('/api/restaurant', recipeRoutes);
 app.use('/api/facility-categories', facilityCategoryRoutes);
 
+// <<<<<<< HEAD
+app.use("/api/users",BookfacilityRoutes)
 app.use('/api/payroll',payrollRoutes)
+// >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");
 // });

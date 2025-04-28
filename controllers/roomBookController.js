@@ -33,7 +33,7 @@ export const createBooking = async (req, res) => {
 export const getAllBookings = async (req, res) => {
     try {  
         
-        const bookings = await RoomBooking.find().populate("memberId").populate("roomId");
+        const bookings = await RoomBooking.find().populate("memberId").populate("roomId").sort({createdAt:-1});
       return  res.status(200).json({success:bookings});
     } catch (error) {
         console.log(error);

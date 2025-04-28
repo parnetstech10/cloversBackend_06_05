@@ -21,7 +21,7 @@ export const createBooking = async (req, res) => {
 // Get all bookings
 export const getAllBookings = async (req, res) => {
   try {
-    const bookings = await sportBookingM.find().populate("memberId").populate("facilityId");
+    const bookings = await sportBookingM.find().populate("memberId").populate("facilityId").sort({createdAt:-1});
     res.status(200).json({success:bookings});
   } catch (error) {
     console.log(error);
