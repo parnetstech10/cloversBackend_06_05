@@ -1,5 +1,5 @@
 import express from "express";
-import { addEmployee, deleteEmployee, editEmployee, getEmployee, getEmployeesById } from "../controllers/employeeController.js";
+import { addEmployee, deleteEmployee, editEmployee, getEmployee, getEmployeeById } from "../controllers/employeeController.js";
 
 const employeeRoutes = express.Router();
 
@@ -19,8 +19,7 @@ const upload = multer({ storage: storage });
 
 employeeRoutes.post("/add", upload.any()  , addEmployee);
 employeeRoutes.get("/get", getEmployee);
-employeeRoutes.post("/edit/:id", editEmployee);
+employeeRoutes.post("/edit/:id", upload.any(), editEmployee);
 employeeRoutes.delete('/delete/:id' , deleteEmployee)
-employeeRoutes.post('/get/:empId' , getEmployeesById)
-
+employeeRoutes.get('/getById/:id', getEmployeeById);
 export default employeeRoutes;

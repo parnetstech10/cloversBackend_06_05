@@ -1,6 +1,6 @@
 import express from "express";
 
-import { addTable, bookTable, cancelBooking, checkAvailability, getAllTables, getTablesByType, updateTableStatus } from "../controllers/tableController.js";
+import { addTable, bookTable, cancelBooking, checkAvailability, deleteTable, getAllTables, getTablesByType, updateTable, updateTableStatus } from "../controllers/tableController.js";
 
 const tableRoutes = express.Router();
 
@@ -11,6 +11,8 @@ tableRoutes.get("/availableTables/:date/:tableType", checkAvailability);
 tableRoutes.post("/bookTable", bookTable);
 tableRoutes.put("/updateTableStatus", updateTableStatus);
 tableRoutes.post("/cancelBooking", cancelBooking);
+tableRoutes.put("/updateTable/:id", updateTable);
+tableRoutes.delete("/deleteTable/:id", deleteTable);
 
 export default tableRoutes;
 

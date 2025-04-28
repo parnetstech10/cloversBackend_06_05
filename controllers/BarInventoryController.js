@@ -1,4 +1,5 @@
 import BarInventoryModel from "../models/BarInventoryModel.js";
+import BarRecipeModel from "../models/barRecipeModel.js";
 
 // Add new bar inventory item
 export const addItem = async (req, res) => {
@@ -221,6 +222,255 @@ export const updateStock = async (req, res) => {
     res.status(400).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+// Add a recipe for a bar item
+export const addBarRecipe = async (req, res) => {
+  try {
+    const { menuItemName, measure, ingredients } = req.body;
+    
+    if (!menuItemName || !ingredients || !Array.isArray(ingredients)) {
+      return res.status(400).json({
+        success: false,
+        message: "Menu item name and ingredients array are required"
+      });
+    }
+    
+    // Check if recipe already exists
+    const existingRecipe = await BarRecipeModel.findOne({ 
+      menuItemName, 
+      ...(measure ? { measure } : {})
+    });
+    
+    if (existingRecipe) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipe already exists for this item"
+      });
+    }
+    
+    // Create new recipe
+    const newRecipe = new BarRecipeModel({
+      menuItemName,
+      measure,
+      ingredients
+    });
+    
+    await newRecipe.save();
+    
+    res.status(201).json({
+      success: true,
+      message: "Bar recipe added successfully",
+      data: newRecipe
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get all bar recipes
+export const getAllBarRecipes = async (req, res) => {
+  try {
+    const recipes = await BarRecipeModel.find()
+      .populate('ingredients.inventoryItemId', 'itemName brand unit');
+    
+    res.status(200).json({
+      success: true,
+      data: recipes
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Deduct from inventory when order is served
+// export const deductFromBarOrder = async (req, res) => {
+//   try {
+//     const { orderItems } = req.body;
+    
+//     if (!orderItems || !Array.isArray(orderItems)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Order items are required"
+//       });
+//     }
+    
+//     const updateLog = [];
+    
+//     // Process each item in the order
+//     for (const item of orderItems) {
+//       const recipe = await BarRecipeModel.findOne({ 
+//         menuItemName: item.name,
+//         ...(item.measure ? { measure: item.measure } : {})
+//       });
+      
+//       if (!recipe) {
+//         updateLog.push(`No recipe found for item: ${item.name} ${item.measure || ''}`);
+//         continue;
+//       }
+      
+//       for (const ingredient of recipe.ingredients) {
+//         const amountToDeduct = ingredient.amount * item.quantity;
+        
+//         const inventoryItem = await BarInventoryModel.findById(ingredient.inventoryItemId);
+        
+//         if (!inventoryItem) {
+//           updateLog.push(`Inventory item not found: ${ingredient.inventoryItemId}`);
+//           continue;
+//         }
+        
+//         const updatedQuantity = Math.max(0, inventoryItem.stockQuantity - amountToDeduct);
+//         inventoryItem.stockQuantity = updatedQuantity;
+        
+//         inventoryItem.usageLogs.push({
+//           date: new Date(),
+//           quantityUsed: amountToDeduct,
+//           purpose: `Bar order: ${item.name} ${item.measure || ''} x${item.quantity}`
+//         });
+        
+//         await inventoryItem.save();
+//         updateLog.push(`Deducted ${amountToDeduct} ${inventoryItem.unit} of ${inventoryItem.itemName} (${inventoryItem.brand})`);
+//       }
+//     }
+    
+//     res.status(200).json({
+//       success: true,
+//       message: "Bar inventory updated successfully",
+//       details: updateLog
+//     });
+//   } catch (error) {
+//     console.error("Error updating bar inventory:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Failed to update bar inventory",
+//       error: error.message
+//     });
+//   }
+// };
+// Updated deductFromBarOrder function for controllers/BarInventoryController.js
+
+export const deductFromBarOrder = async (req, res) => {
+  try {
+    const { orderItems } = req.body;
+    
+    if (!orderItems || !Array.isArray(orderItems)) {
+      return res.status(400).json({
+        success: false,
+        message: "Order items are required"
+      });
+    }
+    
+    const updateLog = [];
+    const lowStockItems = [];
+    const inventoryChanges = [];
+    
+    // Process each item in the order
+    for (const item of orderItems) {
+      // Find the recipe based on item name and measure (if applicable)
+      const recipe = await BarRecipeModel.findOne({ 
+        menuItemName: { $regex: new RegExp(`^${item.name}$`, 'i') },
+        ...(item.measure ? { measure: item.measure } : {})
+      });
+      
+      if (!recipe) {
+        updateLog.push(`No recipe found for item: ${item.name} ${item.measure || ''}`);
+        continue;
+      }
+      
+      // Process each ingredient in the recipe
+      for (const ingredient of recipe.ingredients) {
+        // Calculate amount to deduct (recipe amount * order quantity)
+        const amountToDeduct = ingredient.amount * item.quantity;
+        
+        // Find the inventory item
+        const inventoryItem = await BarInventoryModel.findById(ingredient.inventoryItemId);
+        
+        if (!inventoryItem) {
+          updateLog.push(`Inventory item not found: ${ingredient.inventoryItemId}`);
+          continue;
+        }
+        
+        // Check if we have enough stock
+        if (inventoryItem.stockQuantity < amountToDeduct) {
+          return res.status(400).json({
+            success: false,
+            message: `Insufficient stock of ${inventoryItem.itemName}. Need ${amountToDeduct} ${inventoryItem.unit} but only ${inventoryItem.stockQuantity} available.`
+          });
+        }
+        
+        // Store original values for response
+        const originalQuantity = inventoryItem.stockQuantity;
+        
+        // Update inventory
+        inventoryItem.stockQuantity -= amountToDeduct;
+        inventoryItem.lastStockUpdate = new Date();
+        
+        // Calculate remaining pegs (if unit is ml)
+        let remainingPegs = null;
+        if (inventoryItem.unit === 'ml') {
+          const standardPegSize = 30; // Standard peg size in ml
+          remainingPegs = Math.floor(inventoryItem.stockQuantity / standardPegSize);
+        }
+        
+        // Add to usage logs
+        inventoryItem.usageLogs.push({
+          date: new Date(),
+          quantityUsed: amountToDeduct,
+          purpose: `Bar order: ${item.name} ${item.measure || ''} x${item.quantity}`
+        });
+        
+        // Update status based on remaining quantity
+        if (inventoryItem.stockQuantity <= 0) {
+          inventoryItem.status = "Out of Stock";
+          lowStockItems.push(`${inventoryItem.itemName} (Out of Stock)`);
+        } else if (inventoryItem.stockQuantity < inventoryItem.minStockThreshold) {
+          inventoryItem.status = "Low Stock";
+          lowStockItems.push(`${inventoryItem.itemName} (Low Stock: ${inventoryItem.stockQuantity} ${inventoryItem.unit})`);
+        } else {
+          inventoryItem.status = "Available";
+        }
+        
+        // Save the updated inventory
+        await inventoryItem.save();
+        
+        // Track all changes for reporting
+        inventoryChanges.push({
+          item: inventoryItem.itemName,
+          brand: inventoryItem.brand,
+          originalQuantity: originalQuantity,
+          deducted: amountToDeduct,
+          remaining: inventoryItem.stockQuantity,
+          unit: inventoryItem.unit,
+          remainingPegs: remainingPegs,
+          status: inventoryItem.status,
+          lastUpdated: inventoryItem.lastStockUpdate
+        });
+        
+        updateLog.push(`Deducted ${amountToDeduct} ${inventoryItem.unit} of ${inventoryItem.itemName} (${inventoryItem.brand}). Remaining: ${inventoryItem.stockQuantity} ${inventoryItem.unit}${remainingPegs ? ` (approx. ${remainingPegs} standard pegs)` : ''}`);
+      }
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: "Bar inventory updated successfully",
+      details: updateLog,
+      changes: inventoryChanges,
+      lowStockItems: lowStockItems.length > 0 ? lowStockItems : null
+    });
+  } catch (error) {
+    console.error("Error updating bar inventory:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update bar inventory",
+      error: error.message
     });
   }
 };

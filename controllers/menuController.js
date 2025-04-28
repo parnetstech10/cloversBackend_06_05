@@ -172,8 +172,6 @@ export const addItem = async (req, res) => {
     return res.status(400).json({ message: "Item name is required" });
   }
 
-  // Price can be optional if using measures array for alcohol items.
-  // measures can be an empty array if item is a standard single-price item.
   try {
     const menu = await Menu.findById(categoryId);
     if (!menu) {
@@ -195,7 +193,7 @@ export const addItem = async (req, res) => {
     }
 
     // Add new item. If measures are provided, store them. If price is provided, store it.
-    // If you want price to be optional for items with measures, that's fine.
+    // If you want price to be optional for items with measures, that's fine. 
     const newItem = { name };
     if (typeof price !== "undefined") {
       newItem.price = price; // Single price or default price

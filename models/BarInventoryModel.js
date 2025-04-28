@@ -47,13 +47,20 @@ const barInventorySchema = new mongoose.Schema({
 
 // Middleware to update stock status
 barInventorySchema.pre("save", function (next) {
-  if (this.stockQuantity === 0) {
+  // Update lastStockUpdate when stock changes
+  if (this.isModified('stockQuantity')) {
+    this.lastStockUpdate = new Date();
+  }
+  
+  // Update status based on stock level
+  if (this.stockQuantity <= 0) {
     this.status = "Out of Stock";
   } else if (this.stockQuantity < this.minStockThreshold) {
     this.status = "Low Stock";
   } else {
     this.status = "Available";
   }
+  
   next();
 });
 

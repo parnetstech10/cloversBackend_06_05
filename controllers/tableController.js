@@ -1,21 +1,51 @@
 import TableModel from "../models/tableModel.js";
 
 
-// ✅ Add a new table
+// export const addTable = async (req, res) => {
+//     try {
+//         const { tableNo, seat, tableType } = req.body;
+
+//         const newTable = new TableModel({ tableNo, seat, tableType });
+//         await newTable.save();
+
+//         res.status(201).json({ message: "Table added successfully", table: newTable });
+//     } catch (error) {
+//         res.status(500).json({ message: "Error adding table", error });
+//     }
+// };
+
+// ✅ Get all tables
 export const addTable = async (req, res) => {
     try {
         const { tableNo, seat, tableType } = req.body;
+
+        // Validate table type
+        if (tableType && !["Restaurant", "Bar", "Lounge Area", "Outdoor"].includes(tableType)) {
+            return res.status(400).json({ 
+                message: "Invalid table type. Must be one of: Restaurant, Bar, Lounge Area, Outdoor" 
+            });
+        }
+
+        // Check if table number already exists
+        const existingTable = await TableModel.findOne({ tableNo });
+        if (existingTable) {
+            return res.status(400).json({ message: "Table number already exists" });
+        }
 
         const newTable = new TableModel({ tableNo, seat, tableType });
         await newTable.save();
 
         res.status(201).json({ message: "Table added successfully", table: newTable });
     } catch (error) {
-        res.status(500).json({ message: "Error adding table", error });
+        console.error("Error adding table:", error);
+        res.status(500).json({ 
+            message: "Error adding table", 
+            error: error.message,
+            details: error.errors ? Object.values(error.errors).map(e => e.message) : []
+        });
     }
 };
 
-// ✅ Get all tables
 export const getAllTables = async (req, res) => {
     try {
         const tables = await TableModel.find();
@@ -30,8 +60,10 @@ export const getTablesByType = async (req, res) => {
     try {
         const { tableType } = req.params;
         
-        if (!["Restaurant", "Bar"].includes(tableType)) {
-            return res.status(400).json({ message: "Invalid table type" });
+        if (!["Restaurant", "Bar", "Lounge Area", "Outdoor"].includes(tableType)) {
+            return res.status(400).json({ 
+                message: "Invalid table type. Must be one of: Restaurant, Bar, Lounge Area, Outdoor" 
+            });
         }
 
         const tables = await TableModel.find({ tableType });
@@ -41,16 +73,16 @@ export const getTablesByType = async (req, res) => {
     }
 };
 
-// ✅ Check table availability for a specific date and type
 export const checkAvailability = async (req, res) => {
     try {
         const { date, tableType } = req.params;
 
-        if (!["Restaurant", "Bar"].includes(tableType)) {
-            return res.status(400).json({ message: "Invalid table type" });
+        if (!["Restaurant", "Bar", "Lounge Area", "Outdoor"].includes(tableType)) {
+            return res.status(400).json({ 
+                message: "Invalid table type. Must be one of: Restaurant, Bar, Lounge Area, Outdoor" 
+            });
         }
 
-        // Get available tables of the given type
         const availableTables = await TableModel.find({ status: "available", tableType });
 
         res.json({ availableTables });
@@ -59,7 +91,6 @@ export const checkAvailability = async (req, res) => {
     }
 };
 
-// ✅ Book a table
 export const bookTable = async (req, res) => {
     try {
         const { tableNo } = req.body;
@@ -82,7 +113,6 @@ export const bookTable = async (req, res) => {
     }
 };
 
-// ✅ Update table status (reserved/booked/available)
 export const updateTableStatus = async (req, res) => {
     try {
         const { tableNo, status } = req.body;
@@ -105,7 +135,6 @@ export const updateTableStatus = async (req, res) => {
     }
 };
 
-// ✅ Cancel reservation
 export const cancelBooking = async (req, res) => {
     try {
         const { tableNo } = req.body;
@@ -125,5 +154,56 @@ export const cancelBooking = async (req, res) => {
         res.status(200).json({ message: "Table reservation canceled", table });
     } catch (error) {
         res.status(500).json({ message: "Error canceling reservation", error });
+    }
+};
+
+// Update table details
+export const updateTable = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tableNo, seat, tableType, status } = req.body;
+
+        // Validate table type if provided
+        if (tableType && !["Restaurant", "Bar", "Lounge Area", "Outdoor"].includes(tableType)) {
+            return res.status(400).json({ 
+                message: "Invalid table type. Must be one of: Restaurant, Bar, Lounge Area, Outdoor" 
+            });
+        }
+
+        // Validate status if provided
+        if (status && !["available", "reserved", "booked"].includes(status)) {
+            return res.status(400).json({ message: "Invalid status" });
+        }
+
+        const updatedTable = await TableModel.findByIdAndUpdate(
+            id,
+            { tableNo, seat, tableType, status },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedTable) {
+            return res.status(404).json({ message: "Table not found" });
+        }
+
+        res.status(200).json({ message: "Table updated successfully", table: updatedTable });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating table", error: error.message });
+    }
+};
+
+// Delete table
+export const deleteTable = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const deletedTable = await TableModel.findByIdAndDelete(id);
+        
+        if (!deletedTable) {
+            return res.status(404).json({ message: "Table not found" });
+        }
+        
+        res.status(200).json({ message: "Table deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error deleting table", error: error.message });
     }
 };
