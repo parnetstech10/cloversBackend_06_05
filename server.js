@@ -52,9 +52,9 @@ app.use("/api/menu", menuRoutes);
 app.use("/api/menuBar", router);
 
 app.use("/api/orders", orderRoutes);
+app.use("/api/live-orders", liveOrderRoutes);
 app.use("/api/facility", facilityRoutes);
 app.use("/api/facility/booking", facilityBookingRoutes);
-app.use("/api/live-orders", liveOrderRoutes);
 
 app.use("/api/memberships", membershipRoutes);
 app.use("/api/subscription", subscriptionRoutes);

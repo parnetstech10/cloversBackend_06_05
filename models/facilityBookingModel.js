@@ -7,7 +7,7 @@ const facilityBookingSchema = new mongoose.Schema(
             type: ObjectID,
             ref: "User"
         },
-
+      
         person: [{
             name: {
                 type: String
@@ -23,11 +23,11 @@ const facilityBookingSchema = new mongoose.Schema(
             type: ObjectID,
             ref: "Facility"
         },
-        // facilityName: {
-        //     type: String,
-        //     required: [true, "Facility name is required"],
-        //     // enum: ["conference_room", "banquet_hall", "sports_arena"], // Add your facilities here
-        // },
+        facilityName: {
+            type: String,
+            // required: [true, "Facility name is required"],
+            // enum: ["conference_room", "banquet_hall", "sports_arena"], // Add your facilities here
+        },
         bookingDate: {
             type: Date,
             required: [true, "Booking date is required"],
@@ -83,8 +83,9 @@ const facilityBookingSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            default: "pending"
-        },
+            enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+            default: 'pending'
+          },
 
     },
     { timestamps: true }

@@ -83,8 +83,9 @@ const sportBooking = new mongoose.Schema(
         },
         status: {
             type: String,
-            default: "pending"
-        },
+            enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+            default: 'pending'
+          },
 
     },
     { timestamps: true }
