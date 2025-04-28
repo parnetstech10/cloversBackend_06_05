@@ -189,7 +189,7 @@ export const updateMember = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD
+// <<<<<<< HEAD
 export const updateMemberImg = async (req, res) => {
   try {
     const { id } = req.params;
@@ -231,7 +231,7 @@ export const getMemberImg = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-=======
+
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
@@ -246,4 +246,4 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
->>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
+

@@ -75,16 +75,102 @@ export const getLiveOrders = async (req, res) => {
 //   }
 // };
 
+// export const createLiveOrder = async (req, res) => {
+//   try {
+//     const { table, items, card, userId, cardId, total, carddiscount } = req.body;
+//     const discountRate = !isNaN(Number(carddiscount)) ? Number(carddiscount) : 0;
+
+//     if (isNaN(discountRate)) {
+//       return res.status(400).json({ message: "Invalid card discount value" });
+//     }
+//     const categoryMapping = await getCategoryMapping();
+//     const foodItems = items.filter(
+//       item =>
+//         categoryMapping[item.name] === 'veg' ||
+//         categoryMapping[item.name] === 'non-veg'
+//     );
+//     const alcoholItems = items.filter(
+//       item =>
+//         categoryMapping[item.name] !== 'veg' &&
+//         categoryMapping[item.name] !== 'non-veg'
+//     );
+//     if (foodItems.length > 0) {
+//       const foodTotal = foodItems.reduce(
+//         (sum, item) => sum + item.price * item.quantity,
+//         0
+//       );
+//       const foodDiscount = (foodTotal * discountRate) / 100;
+//       const foodOrder = new LiveOrder({
+//         table,
+//         items: foodItems,
+//         category: 'resturant',
+//         total: Number((foodTotal - foodDiscount).toFixed(2)),
+//         card,
+//         discount: Number(foodDiscount.toFixed(2)),
+//         cardId,
+//         userId,
+//       });
+//       await foodOrder.save();
+//     }
+//     if (alcoholItems.length > 0) {
+//       const alcoholTotal = alcoholItems.reduce(
+//         (sum, item) => sum + item.price * item.quantity,
+//         0
+//       );
+//       const alcoholDiscount = (alcoholTotal * discountRate) / 100;
+//       const alcoholOrder = new LiveOrder({
+//         table,
+//         items: alcoholItems,
+//         category: 'bar',
+//         total: Number((alcoholTotal - alcoholDiscount).toFixed(2)),
+//         card,
+//         discount: Number(alcoholDiscount.toFixed(2)),
+//         cardId,
+//         userId,
+//       });
+//       await alcoholOrder.save();
+//     }
+//     if (cardId && total && !isNaN(Number(total))) {
+//       transaction(cardId, Number(total));
+//     }
+
+//     res.status(201).json({ message: 'Orders created successfully' });
+//   } catch (err) {
+//     console.error('Error creating live orders:', err);
+//     res.status(500).json({ message: 'Failed to create live orders', error: err });
+//   }
+// };
 export const createLiveOrder = async (req, res) => {
   try {
-    const { table, items, card, userId, cardId, total, carddiscount } = req.body;
+    const { 
+      table, 
+      roomNumber,
+      roomName,
+      serviceType,
+      items, 
+      card, 
+      userId, 
+      cardId, 
+      total, 
+      carddiscount,
+      roomServiceCharge,
+      fixedServiceCharge
+    } = req.body;
 
     // Ensure discount is a valid number
-    // const discountRate = Number(carddiscount);
     const discountRate = !isNaN(Number(carddiscount)) ? Number(carddiscount) : 0;
 
     if (isNaN(discountRate)) {
       return res.status(400).json({ message: "Invalid card discount value" });
+    }
+    
+    // Validate based on service type
+    if (serviceType === 'dining' && !table) {
+      return res.status(400).json({ message: "Table is required for dining orders" });
+    }
+    
+    if (serviceType === 'room' && !roomNumber) {
+      return res.status(400).json({ message: "Room number is required for room service orders" });
     }
 
     // Get the category mapping
@@ -109,16 +195,35 @@ export const createLiveOrder = async (req, res) => {
         0
       );
       const foodDiscount = (foodTotal * discountRate) / 100;
-      const foodOrder = new LiveOrder({
-        table,
+      
+      // Calculate service charges for food
+      const foodRoomServiceCharge = serviceType === 'room' ? 
+        (roomServiceCharge * (foodTotal / total)) : 0;
+      const foodFixedServiceCharge = (fixedServiceCharge * (foodTotal / total));
+      
+      // Base order data
+      const foodOrderData = {
+        serviceType,
         items: foodItems,
         category: 'resturant',
-        total: Number((foodTotal - foodDiscount).toFixed(2)),
+        total: Number((foodTotal - foodDiscount + foodRoomServiceCharge + foodFixedServiceCharge).toFixed(2)),
         card,
         discount: Number(foodDiscount.toFixed(2)),
         cardId,
         userId,
-      });
+        roomServiceCharge: Number(foodRoomServiceCharge.toFixed(2)),
+        fixedServiceCharge: Number(foodFixedServiceCharge.toFixed(2))
+      };
+      
+      // Add location data based on service type
+      if (serviceType === 'dining') {
+        foodOrderData.table = table;
+      } else {
+        foodOrderData.roomNumber = roomNumber;
+        foodOrderData.roomName = roomName;
+      }
+      
+      const foodOrder = new LiveOrder(foodOrderData);
       await foodOrder.save();
     }
 
@@ -129,16 +234,35 @@ export const createLiveOrder = async (req, res) => {
         0
       );
       const alcoholDiscount = (alcoholTotal * discountRate) / 100;
-      const alcoholOrder = new LiveOrder({
-        table,
+      
+      // Calculate service charges for alcohol
+      const alcoholRoomServiceCharge = serviceType === 'room' ? 
+        (roomServiceCharge * (alcoholTotal / total)) : 0;
+      const alcoholFixedServiceCharge = (fixedServiceCharge * (alcoholTotal / total));
+      
+      // Base order data
+      const alcoholOrderData = {
+        serviceType,
         items: alcoholItems,
         category: 'bar',
-        total: Number((alcoholTotal - alcoholDiscount).toFixed(2)),
+        total: Number((alcoholTotal - alcoholDiscount + alcoholRoomServiceCharge + alcoholFixedServiceCharge).toFixed(2)),
         card,
         discount: Number(alcoholDiscount.toFixed(2)),
         cardId,
         userId,
-      });
+        roomServiceCharge: Number(alcoholRoomServiceCharge.toFixed(2)),
+        fixedServiceCharge: Number(alcoholFixedServiceCharge.toFixed(2))
+      };
+      
+      // Add location data based on service type
+      if (serviceType === 'dining') {
+        alcoholOrderData.table = table;
+      } else {
+        alcoholOrderData.roomNumber = roomNumber;
+        alcoholOrderData.roomName = roomName;
+      }
+      
+      const alcoholOrder = new LiveOrder(alcoholOrderData);
       await alcoholOrder.save();
     }
 
@@ -153,7 +277,6 @@ export const createLiveOrder = async (req, res) => {
     res.status(500).json({ message: 'Failed to create live orders', error: err });
   }
 };
-
 export const updateLiveOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;

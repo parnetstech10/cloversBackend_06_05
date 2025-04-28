@@ -27,12 +27,11 @@ import tableRoutes from "./routes/tableRouter.js";
 import Transaction from './routes/transactionRoutes.js';
 import Wallet from './routes/walletRoute.js';
 import SportBookingRoutes from "./routes/sportBooking.js";
-<<<<<<< HEAD
+// <<<<<<< HEAD
 import BookfacilityRoutes from "./routes/BookFacility.js"
-=======
 import recipeRoutes from './routes/recipeRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js'
->>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
+// >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
 // Load environment variables
 dotenv.config();
 
@@ -84,11 +83,10 @@ app.use("/api/user/wallet",Wallet);
 app.use("/api/sportbooking",SportBookingRoutes);
 app.use('/api/restaurant', recipeRoutes);
 
-<<<<<<< HEAD
+// <<<<<<< HEAD
 app.use("/api/users",BookfacilityRoutes)
-=======
 app.use('/api/payroll',payrollRoutes)
->>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
+// >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");
 // });

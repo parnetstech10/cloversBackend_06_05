@@ -9,7 +9,36 @@ const liveOrderSchema = new mongoose.Schema(
     },
     table: {
       type: String,
+      required: function() {
+        return this.serviceType === 'dining';  
+      }
+    },
+    // Add service type field
+    serviceType: {
+      type: String,
+      enum: ['dining', 'room'],
       required: true,
+      default: 'dining'
+    },
+    // Add room-specific fields
+    roomNumber: {
+      type: String,
+      required: function() {
+        return this.serviceType === 'room';  // Only required for room service
+      }
+    },
+    roomName: {
+      type: String  // Optional additional info
+    },
+    // Add room service charge
+    roomServiceCharge: {
+      type: Number,
+      default: 0
+    },
+    // Add fixed service charge
+    fixedServiceCharge: {
+      type: Number,
+      default: 0
     },
     userId: {
       type: ObjectId,
