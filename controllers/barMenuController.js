@@ -280,3 +280,80 @@ export const deleteItem = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+// PUT /api/menuBar/editMenuItem
+export const editMenuItem = async (req, res) => {
+  try {
+    const { itemId, categoryId, brandId, name, price, description, measures } = req.body;
+    
+    const menu = await MenuBar.findById(categoryId);
+    if (!menu) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    
+    const brand = menu.brand.id(brandId);
+    if (!brand) {
+      return res.status(404).json({ message: "Brand not found" });
+    }
+    
+    const item = brand.items.id(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    // Update item properties
+    if (name) item.name = name;
+    if (price !== undefined) item.price = price;
+    if (description !== undefined) item.description = description;
+    if (measures && Array.isArray(measures)) item.measures = measures;
+    
+    // Handle image upload if included
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        if (file.fieldname === "image") {
+          item.image = file.filename;
+        }
+      });
+    }
+    
+    await menu.save();
+    res.status(200).json({ message: "Item updated successfully", item });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// DELETE /api/menuBar/deleteMenuItem/:categoryId/:itemId
+export const deleteMenuItem = async (req, res) => {
+  try {
+    const { categoryId, itemId } = req.params;
+    
+    const menu = await MenuBar.findById(categoryId);
+    if (!menu) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    
+    // Look through all brands for the item
+    let itemFound = false;
+    
+    for (const brand of menu.brand) {
+      const itemIndex = brand.items.findIndex(item => item._id.toString() === itemId);
+      
+      if (itemIndex !== -1) {
+        // Item found, delete it
+        brand.items.splice(itemIndex, 1);
+        itemFound = true;
+        break;
+      }
+    }
+    
+    if (!itemFound) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    await menu.save();
+    res.status(200).json({ message: "Item deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

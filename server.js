@@ -29,6 +29,8 @@ import Wallet from './routes/walletRoute.js';
 import SportBookingRoutes from "./routes/sportBooking.js";
 import recipeRoutes from './routes/recipeRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js'
+import facilityCategoryRoutes  from './routes/facilityCategories.js';
+
 // Load environment variables
 dotenv.config();
 
@@ -79,6 +81,7 @@ app.use("/api/user/transaction",Transaction);
 app.use("/api/user/wallet",Wallet);
 app.use("/api/sportbooking",SportBookingRoutes);
 app.use('/api/restaurant', recipeRoutes);
+app.use('/api/facility-categories', facilityCategoryRoutes);
 
 app.use('/api/payroll',payrollRoutes)
 // app.use("/", (req, res) => {

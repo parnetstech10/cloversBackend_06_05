@@ -14,6 +14,8 @@ import {
   editCategory,
   getBarMenu,
   getCategory,
+  editMenuItem,
+  deleteMenuItem
 } from "../controllers/barMenuController.js";
 
 // var storage = multer.diskStorage({
@@ -76,5 +78,7 @@ router.post('/editCategory' , editCategory)
 router.delete('/deleteCategory/:id' , deleteCategory)
 router.put('/editSubCategory' , editBrand)
 router.delete('/deleteSubCategory/:categoryId/:subCategoryId' , deleteSubCategory)
+router.put('/editMenuItem', editMenuItem);
+router.delete('/deleteMenuItem/:categoryId/:itemId', deleteMenuItem);
 
 export default router;
