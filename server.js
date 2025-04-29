@@ -27,16 +27,14 @@ import tableRoutes from "./routes/tableRouter.js";
 import Transaction from './routes/transactionRoutes.js';
 import Wallet from './routes/walletRoute.js';
 import SportBookingRoutes from "./routes/sportBooking.js";
+import generalInventoryRoutes from './routes/generalinventoryRoutes.js';
 // <<<<<<< HEAD
 import BookfacilityRoutes from "./routes/BookFacility.js"
 import recipeRoutes from './routes/recipeRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js'
-<<<<<<< HEAD
 import facilityCategoryRoutes  from './routes/facilityCategories.js';
 
-=======
 // >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
->>>>>>> e1146b4c0caf225fcfe75ed6808bee000010bf89
 // Load environment variables
 dotenv.config();
 
@@ -88,7 +86,7 @@ app.use("/api/user/wallet",Wallet);
 app.use("/api/sportbooking",SportBookingRoutes);
 app.use('/api/restaurant', recipeRoutes);
 app.use('/api/facility-categories', facilityCategoryRoutes);
-
+app.use("/api/general-inventory", generalInventoryRoutes);
 // <<<<<<< HEAD
 app.use("/api/users",BookfacilityRoutes)
 app.use('/api/payroll',payrollRoutes)
@@ -96,6 +94,10 @@ app.use('/api/payroll',payrollRoutes)
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");
 // });
+// Add this additional line in server.js to handle existing frontend code
+app.use("/api/general-categories", (req, res) => {
+  res.redirect("/api/general-inventory/categories");
+});
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
