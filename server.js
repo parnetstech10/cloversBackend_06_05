@@ -87,7 +87,6 @@ app.use("/api/sportbooking",SportBookingRoutes);
 app.use('/api/restaurant', recipeRoutes);
 app.use('/api/facility-categories', facilityCategoryRoutes);
 app.use("/api/general-inventory", generalInventoryRoutes);
-// <<<<<<< HEAD
 app.use("/api/users",BookfacilityRoutes)
 app.use('/api/payroll',payrollRoutes)
 // >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c

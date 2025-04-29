@@ -1,4 +1,3 @@
-// Update models/GeneralInventory.js by adding a category model
 import mongoose from 'mongoose';
 
 const generalCategorySchema = new mongoose.Schema({
