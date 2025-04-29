@@ -50,7 +50,11 @@ const payrollSchema = new mongoose.Schema({
     type: String,
     enum: ['Pending', 'Paid'],
     default: 'Pending'
-  }
+  },
+  remainingMonths: {
+    type: Number,
+    default: 0
+  },
 }, { timestamps: true });
 
 // Compound index to prevent duplicate entries for the same employee in the same month/year

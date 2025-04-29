@@ -1,32 +1,23 @@
-// controllers/payrollController.js
 import Payroll from '../models/payrollModel.js';
 import Employee from '../models/employeeModel.js';
 
 // Get all payroll records
-// export const getAllPayrolls = async (req, res) => {
-//   try {
-//     const payrolls = await Payroll.find().populate('employeeId', 'name employeeId');
-//     res.status(200).json({ success: true, data: payrolls });
-//   } catch (error) {
-//     res.status(500).json({ success: false, error: error.message });
-//   }
-// };
-// In payrollController.js
 export const getAllPayrolls = async (req, res) => {
-    try {
-      const payrolls = await Payroll.find()
-        .populate('employeeId', 'name email phone employeeId')
-        .sort({ createdAt: -1 });
-        
-      // Debug what's coming back
-      console.log("Payrolls found:", payrolls.length);
+  try {
+    const payrolls = await Payroll.find()
+      .populate('employeeId', 'name email phone employeeId')
+      .sort({ createdAt: -1 });
       
-      res.status(200).json({ success: true, data: payrolls });
-    } catch (error) {
-      console.error("Error in getAllPayrolls:", error);
-      res.status(500).json({ success: false, error: error.message });
-    }
-  };
+    // Debug what's coming back
+    console.log("Payrolls found:", payrolls.length);
+    
+    res.status(200).json({ success: true, data: payrolls });
+  } catch (error) {
+    console.error("Error in getAllPayrolls:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Create new payroll record or update if exists
 export const createPayroll = async (req, res) => {
   try {
@@ -73,6 +64,16 @@ export const createPayroll = async (req, res) => {
       payroll.advanceDeduction = totalAdvanceDeduction;
       payroll.netSalary = netSalary;
       
+      // Calculate remaining months for advance payment
+      const calculatedRemainingMonths = advancePayment > 0 
+        ? deductionMonths - 1 
+        : employee.remainingAdvanceMonths > 0 
+          ? employee.remainingAdvanceMonths - 1 
+          : 0;
+      
+      // Update the remaining months field
+      payroll.remainingMonths = Math.max(0, calculatedRemainingMonths);
+      
       await payroll.save();
       
       // Update employee record with advance information
@@ -94,6 +95,13 @@ export const createPayroll = async (req, res) => {
       
       res.status(200).json({ success: true, data: payroll });
     } else {
+      // Calculate remaining months for advance payment
+      const calculatedRemainingMonths = advancePayment > 0 
+        ? deductionMonths - 1 
+        : employee.remainingAdvanceMonths > 0 
+          ? employee.remainingAdvanceMonths - 1 
+          : 0;
+      
       // Create new record
       const newPayroll = await Payroll.create({
         employeeId,
@@ -107,6 +115,7 @@ export const createPayroll = async (req, res) => {
         remainingAdvance: (employee.currentAdvance - existingAdvanceDeduction) + 
                         (advancePayment ? advancePayment - monthlyDeduction : 0),
         deductionMonths: deductionMonths || 1,
+        remainingMonths: Math.max(0, calculatedRemainingMonths),
         netSalary
       });
       
@@ -156,7 +165,10 @@ export const processNextMonth = async (req, res) => {
     
     // If there's remaining advance, apply it to this month
     if (prevPayroll && prevPayroll.remainingAdvance > 0) {
-      const remainingMonths = prevPayroll.deductionMonths - 1;
+      // Get remaining months directly from the payroll record
+      const remainingMonths = prevPayroll.remainingMonths || 0;
+      
+      // Calculate monthly deduction
       const monthlyDeduction = remainingMonths > 0 ? 
         prevPayroll.remainingAdvance / remainingMonths : prevPayroll.remainingAdvance;
       
@@ -168,7 +180,26 @@ export const processNextMonth = async (req, res) => {
         remainingMonths: Math.max(0, remainingMonths - 1)
       });
     } else {
-      res.status(200).json({ success: true, advanceDeduction: 0, remainingAdvance: 0 });
+      // Get the employee to check if they have any advance payment
+      const employee = await Employee.findById(employeeId);
+      
+      if (employee && employee.currentAdvance > 0 && employee.remainingAdvanceMonths > 0) {
+        const monthlyDeduction = employee.currentAdvance / employee.remainingAdvanceMonths;
+        
+        res.status(200).json({
+          success: true,
+          advanceDeduction: monthlyDeduction,
+          remainingAdvance: employee.currentAdvance - monthlyDeduction,
+          remainingMonths: employee.remainingAdvanceMonths - 1
+        });
+      } else {
+        res.status(200).json({ 
+          success: true, 
+          advanceDeduction: 0, 
+          remainingAdvance: 0,
+          remainingMonths: 0
+        });
+      }
     }
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
