@@ -140,6 +140,7 @@ export const getLiveOrders = async (req, res) => {
 //     res.status(500).json({ message: 'Failed to create live orders', error: err });
 //   }
 // };
+
 export const createLiveOrder = async (req, res) => {
   try {
     const { 
@@ -151,20 +152,21 @@ export const createLiveOrder = async (req, res) => {
       card, 
       userId, 
       cardId, 
-      total, 
-      carddiscount,
+      total,
+      discount,
+      carddiscount, // This is the discount percentage (e.g., 10, 15, 20)
       roomServiceCharge,
       fixedServiceCharge
     } = req.body;
 
-    // Ensure discount is a valid number
+    // Validate total to ensure it's a number
+    const orderTotal = !isNaN(Number(total)) ? Number(total) : 
+      items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+      
+    // Ensure discount is a valid number (this is the discount percentage)
     const discountRate = !isNaN(Number(carddiscount)) ? Number(carddiscount) : 0;
 
-    if (isNaN(discountRate)) {
-      return res.status(400).json({ message: "Invalid card discount value" });
-    }
-    
-    // Validate based on service type
+    // Validate that we have required data based on service type
     if (serviceType === 'dining' && !table) {
       return res.status(400).json({ message: "Table is required for dining orders" });
     }
@@ -190,22 +192,29 @@ export const createLiveOrder = async (req, res) => {
 
     // Create food order
     if (foodItems.length > 0) {
+      // Calculate food subtotal
       const foodTotal = foodItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
       );
+      
+      // Calculate proportion of total
+      const foodProportion = foodTotal / orderTotal;
+      
+      // Calculate discount for food portion
       const foodDiscount = (foodTotal * discountRate) / 100;
       
       // Calculate service charges for food
       const foodRoomServiceCharge = serviceType === 'room' ? 
-        (roomServiceCharge * (foodTotal / total)) : 0;
-      const foodFixedServiceCharge = (fixedServiceCharge * (foodTotal / total));
+        (Number(roomServiceCharge) * foodProportion) : 0;
+      const foodFixedServiceCharge = (Number(fixedServiceCharge) * foodProportion);
       
       // Base order data
       const foodOrderData = {
         serviceType,
         items: foodItems,
         category: 'resturant',
+        // Subtotal - discount + service charges
         total: Number((foodTotal - foodDiscount + foodRoomServiceCharge + foodFixedServiceCharge).toFixed(2)),
         card,
         discount: Number(foodDiscount.toFixed(2)),
@@ -229,22 +238,29 @@ export const createLiveOrder = async (req, res) => {
 
     // Create alcohol order
     if (alcoholItems.length > 0) {
+      // Calculate alcohol subtotal
       const alcoholTotal = alcoholItems.reduce(
         (sum, item) => sum + item.price * item.quantity,
         0
       );
+      
+      // Calculate proportion of total
+      const alcoholProportion = alcoholTotal / orderTotal;
+      
+      // Calculate discount for alcohol portion
       const alcoholDiscount = (alcoholTotal * discountRate) / 100;
       
       // Calculate service charges for alcohol
       const alcoholRoomServiceCharge = serviceType === 'room' ? 
-        (roomServiceCharge * (alcoholTotal / total)) : 0;
-      const alcoholFixedServiceCharge = (fixedServiceCharge * (alcoholTotal / total));
+        (Number(roomServiceCharge) * alcoholProportion) : 0;
+      const alcoholFixedServiceCharge = (Number(fixedServiceCharge) * alcoholProportion);
       
       // Base order data
       const alcoholOrderData = {
         serviceType,
         items: alcoholItems,
         category: 'bar',
+        // Subtotal - discount + service charges
         total: Number((alcoholTotal - alcoholDiscount + alcoholRoomServiceCharge + alcoholFixedServiceCharge).toFixed(2)),
         card,
         discount: Number(alcoholDiscount.toFixed(2)),
@@ -266,17 +282,18 @@ export const createLiveOrder = async (req, res) => {
       await alcoholOrder.save();
     }
 
-    // Optional: call transaction
-    if (cardId && total && !isNaN(Number(total))) {
-      transaction(cardId, Number(total));
+    // Optional: call transaction for card usage if a card was used and we have a valid total
+    if (cardId && orderTotal && discountRate > 0) {
+      transaction(cardId, orderTotal);
     }
 
     res.status(201).json({ message: 'Orders created successfully' });
   } catch (err) {
     console.error('Error creating live orders:', err);
-    res.status(500).json({ message: 'Failed to create live orders', error: err });
+    res.status(500).json({ message: 'Failed to create live orders', error: err.message });
   }
 };
+
 export const updateLiveOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;

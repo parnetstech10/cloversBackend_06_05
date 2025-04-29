@@ -31,13 +31,9 @@ import SportBookingRoutes from "./routes/sportBooking.js";
 import BookfacilityRoutes from "./routes/BookFacility.js"
 import recipeRoutes from './routes/recipeRoutes.js';
 import payrollRoutes from './routes/payrollRoutes.js'
-<<<<<<< HEAD
+
 import facilityCategoryRoutes  from './routes/facilityCategories.js';
 
-=======
-// >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
->>>>>>> e1146b4c0caf225fcfe75ed6808bee000010bf89
-// Load environment variables
 dotenv.config();
 
 // Connect to database
