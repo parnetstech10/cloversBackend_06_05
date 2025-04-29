@@ -1,7 +1,16 @@
 import express from 'express';
-import { addRoom, getRooms, getRoomById, updateRoom, deleteRoom, updateStatus } from '../controllers/roomController.js';
+import { 
+    addRoom, getRooms, getRoomById, updateRoom, deleteRoom, updateStatus,
+    getRoomTypes, createRoomType
+} from '../controllers/roomController.js';
+
 const router = express.Router();
 
+// Room type routes - MUST BE BEFORE /:id routes
+router.get('/types', getRoomTypes);
+router.post('/types', createRoomType);
+
+// Room routes
 router.post('/add', addRoom);
 router.get('/', getRooms);
 router.get('/:id', getRoomById);
