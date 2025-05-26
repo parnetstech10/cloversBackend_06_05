@@ -18,12 +18,10 @@ const userSchema = new mongoose.Schema(
     Blood_Gp: { type: String },
     "Phone No": { type: Number },
     "Office No": { type: String, default: null },
-    
     // To avoid E11000 error for null values, use partial index via sparse
     Aadhar_No: { type: String, unique: true, sparse: true },
     Pan: { type: String, unique: true, sparse: true },
     email: { type: String, unique: true, sparse: true },
-
     "C/O": { type: String },
     Photo: { type: String },
     ADHAR: { type: String },
