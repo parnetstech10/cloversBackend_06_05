@@ -19,9 +19,13 @@ const subScriptionModel = new Schema({
         type: Number,
         required: true
     },
+    durationName: {
+        type: String,
+        required: true
+    },
     duration: {
         type: Number,
-        default: 0
+        // default: 0
     },
     discount: {
         type: Number,

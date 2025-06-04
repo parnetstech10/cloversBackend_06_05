@@ -32,7 +32,7 @@ router.post('/register', registerUser);
 router.post('/login', authUser);
 router.get("/getAllusers",getAllusers);
 // <<<<<<< HEAD
-router.put("/updatemember/:id",upload.any(),protect,updateMember)
+// router.put("/updatemember/:id",upload.any(),protect,updateMember)
 router.put("/updateMemberImg/:id",upload.any(),updateMemberImg)
 router.get("/getMemberImg/:id",getMemberImg)
 

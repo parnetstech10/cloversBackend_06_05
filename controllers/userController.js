@@ -59,6 +59,8 @@ export const registerUser = async (req, res) => {
 
   try {
     const {  Member_Name, Mobile_Number, email, password, role, membershipStatus, membershipExpiryDate } = req.body;
+    console.log("reqbody",req.body);
+    
     const Membership_No = await generateMembershipNo();
     const App_No = await generateAppNo();
 
@@ -86,7 +88,8 @@ export const registerUser = async (req, res) => {
       role,
       App_No
     });
-
+  // console.log("newMember",newMember);
+  
     await newMember.save();
     res.status(201).json({
       id: newMember._id,
@@ -162,6 +165,7 @@ export const updateMember = async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
+ console.log(req.body);
  
     if (req.files.length != 0) {
       let arr = req.files

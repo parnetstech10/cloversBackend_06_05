@@ -31,7 +31,10 @@ const userSchema = new mongoose.Schema(
     isDoc: { type: Boolean, default: false },
     profileImage: { type: String },
     status: { type: String },
-    password: { type: String }
+    password: { type: String },
+    dependent:{type:String, enum: ["Spouse", "Children"] },
+    Spouse:{type:String},
+   	Children :{type:String}
   },
   {
     timestamps: true,

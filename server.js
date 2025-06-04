@@ -35,7 +35,8 @@ import payrollRoutes from './routes/payrollRoutes.js'
 
 
 import facilityCategoryRoutes  from './routes/facilityCategories.js';
-
+import guestRoutes from './routes/guest.js';
+import otpRoutes from './routes/otp.js';
 dotenv.config();
 
 // Connect to database
@@ -53,6 +54,8 @@ app.use(cors());
 app.use(morgan("dev"));
 
 app.use("/api/users", userRoutes);
+app.use('/api/guests', guestRoutes);
+app.use('/api/otp', otpRoutes);
 app.use("/api/admin", authRouts);
 // Menu route
 app.use("/api/menu", menuRoutes);
@@ -97,6 +100,9 @@ app.use('/api/payroll',payrollRoutes)
 app.use("/api/general-categories", (req, res) => {
   res.redirect("/api/general-inventory/categories");
 });
+app.use((req,res)=>{
+res.send("Server Is Working Fine")
+})
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
