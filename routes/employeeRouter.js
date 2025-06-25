@@ -14,7 +14,7 @@ var storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer();
 
 
 employeeRoutes.post("/add", upload.any()  , addEmployee);

@@ -1,3 +1,4 @@
+import { uploadFile2 } from "../middleware/aws.js";
 import MenuBar from "../models/barMenuModel.js";
 
 // GET /api/menuBar
@@ -201,7 +202,7 @@ export const addItem = async (req, res) => {
       let arr = req.files;
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].fieldname === "image") {
-          newItem["image"] = arr[i].filename;
+          newItem["image"] = await uploadFile2(arr[i],"menu");
         }
       }
     }
@@ -308,17 +309,19 @@ export const editMenuItem = async (req, res) => {
     if (measures && Array.isArray(measures)) item.measures = measures;
     
     // Handle image upload if included
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        if (file.fieldname === "image") {
-          item.image = file.filename;
-        }
-      });
+   if (req.files && req.files.length > 0) {
+  for (const file of req.files) {
+    if (file.fieldname === "image") {
+      item.image = await uploadFile2(file, "menu");
     }
+  }
+}
+
     
     await menu.save();
     res.status(200).json({ message: "Item updated successfully", item });
-  } catch (error) {
+  } catch (error) {    
+    console.log(error)
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -24,7 +24,7 @@ var storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer();
 
 // Create a new guest (initiates OTP process)
 router.post('/', upload.any(), createGuest);

@@ -26,7 +26,7 @@ var storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer();
 // Public routes
 router.post('/register', registerUser);
 router.post('/login', authUser);

@@ -1,3 +1,4 @@
+import { uploadFile2 } from '../middleware/aws.js';
 import Guest from '../models/guest.js';
 import User from '../models/User.js';
 
@@ -57,13 +58,20 @@ export const createGuest = async (req, res) => {
 
     // Handle file uploads
     if (req.files?.length) {
-      req.files.forEach((file) => {
-        if (file.fieldname === "ADHAR") guestData.ADHAR = file.filename;
-        if (file.fieldname === "PAN") guestData.PAN = file.filename;
-        if (file.fieldname === "Photo") guestData.Photo = file.filename;
-      });
+      for (const file of req.files) {
+        if (file.fieldname === "ADHAR") {
+          guestData.ADHAR = await uploadFile2(file, "guest");
+        }
+        if (file.fieldname === "PAN") {
+          guestData.PAN = await uploadFile2(file, "guest");
+        }
+        if (file.fieldname === "Photo") {
+          guestData.Photo = await uploadFile2(file, "guest");
+        }
+      }
       guestData.isDoc = true;
     }
+    
 
     // Find the sponsoring member
     const member = await User.findOne({ Membership_No: guestData.Membership_No });
@@ -475,20 +483,21 @@ export const updateGuest = async (req, res) => {
 
     // Don't allow role change
     delete updateData.role;
-    if (req.files.length != 0) {
-        let arr = req.files
-        for (let i = 0; i < arr.length; i++) {
-            if (arr[i].fieldname == "ADHAR") {
-              updateData["ADHAR"] = arr[i].filename;
-              
-            }
-            if (arr[i].fieldname == "PAN") {
-              updateData["PAN"] = arr[i].filename
-          }
-          if (arr[i].fieldname == "Photo") {
-            updateData["Photo"] = arr[i].filename
-         }
-            }}
+    if (req.files?.length) {
+      for (const file of req.files) {
+        if (file.fieldname === "ADHAR") {
+          guestData.ADHAR = await uploadFile2(file, "guest");
+        }
+        if (file.fieldname === "PAN") {
+          guestData.PAN = await uploadFile2(file, "guest");
+        }
+        if (file.fieldname === "Photo") {
+          guestData.Photo = await uploadFile2(file, "guest");
+        }
+      }
+      guestData.isDoc = true;
+    }
+    
   
             updateData["isDoc"]=true;
     const updatedGuest = await Guest.findByIdAndUpdate(

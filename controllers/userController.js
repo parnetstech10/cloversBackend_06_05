@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { check, validationResult } from "express-validator";
+import { uploadFile2 } from '../middleware/aws.js';
 
 const validateMember = [
   // check("Membership_No").notEmpty().withMessage("Membership number is required"),
@@ -171,14 +172,14 @@ export const updateMember = async (req, res) => {
       let arr = req.files
       for (let i = 0; i < arr.length; i++) {
           if (arr[i].fieldname == "ADHAR") {
-            updateData["ADHAR"] = arr[i].filename;
+            updateData["ADHAR"] = await uploadFile2(arr[i],"user");
             
           }
           if (arr[i].fieldname == "PAN") {
-            updateData["PAN"] = arr[i].filename
+            updateData["PAN"] = await uploadFile2(arr[i],"user")
         }
         if (arr[i].fieldname == "Photo") {
-          updateData["Photo"] = arr[i].filename
+          updateData["Photo"] = await uploadFile2(arr[i],"user")
        }
           }}
 
@@ -203,7 +204,7 @@ export const updateMemberImg = async (req, res) => {
       let arr = req.files
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].fieldname == "profileImage") {
-          updateProfileImg["profileImage"] = arr[i].filename
+          updateProfileImg["profileImage"] = await uploadFile2(arr[i],"user")
        }
           }}
 

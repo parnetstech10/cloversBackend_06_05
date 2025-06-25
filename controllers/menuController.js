@@ -1,3 +1,4 @@
+import { uploadFile2 } from "../middleware/aws.js";
 import Menu from "../models/menuModel.js";
 
 // GET /api/menu
@@ -203,7 +204,7 @@ export const addItem = async (req, res) => {
       let arr = req.files;
       for (let i = 0; i < arr.length; i++) {
         if (arr[i].fieldname === "image") {
-          newItem["image"] = arr[i].filename;
+          newItem["image"] = await uploadFile2(arr[i],"menu");
         }
       }
     }

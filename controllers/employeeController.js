@@ -1,3 +1,4 @@
+import { uploadFile2 } from "../middleware/aws.js";
 import employeeModel from "../models/employeeModel.js";
 
 const addEmployee = async (req, res) => {
@@ -8,13 +9,18 @@ const addEmployee = async (req, res) => {
 
     // Handle file uploads
     if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        if (file.fieldname === "panPhoto") newItem.panPhoto = file.filename;
-        if (file.fieldname === "aadharPhoto") newItem.aadharPhoto = file.filename;
-        if (file.fieldname === "photo") newItem.photo = file.filename;
-      });
+      for (const file of req.files) {
+        if (file.fieldname === "panPhoto") {
+          newItem.panPhoto = await uploadFile2(file, "employee");
+        }
+        if (file.fieldname === "aadharPhoto") {
+          newItem.aadharPhoto = await uploadFile2(file, "employee");
+        }
+        if (file.fieldname === "photo") {
+          newItem.photo = await uploadFile2(file, "employee");
+        }
+      }
     }
-
     const employee = new employeeModel(newItem);
     await employee.save();
     
@@ -42,12 +48,19 @@ const editEmployee = async (req, res) => {
 
     // Handle file uploads
     if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        if (file.fieldname === "panPhoto") updateData.panPhoto = file.filename;
-        if (file.fieldname === "aadharPhoto") updateData.aadharPhoto = file.filename;
-        if (file.fieldname === "photo") updateData.photo = file.filename;
-      });
+      for (const file of req.files) {
+        if (file.fieldname === "panPhoto") {
+          newItem.panPhoto = await uploadFile2(file, "employee");
+        }
+        if (file.fieldname === "aadharPhoto") {
+          newItem.aadharPhoto = await uploadFile2(file, "employee");
+        }
+        if (file.fieldname === "photo") {
+          newItem.photo = await uploadFile2(file, "employee");
+        }
+      }
     }
+    
 
     const updatedEmployee = await employeeModel.findByIdAndUpdate(id, updateData, { new: true });
 
