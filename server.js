@@ -2,6 +2,8 @@ import express from "express";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import cors from "cors";
+import path from 'path';
+import { fileURLToPath } from 'url';
 import userRoutes from "./routes/userRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
@@ -100,9 +102,16 @@ app.use('/api/payroll',payrollRoutes)
 app.use("/api/general-categories", (req, res) => {
   res.redirect("/api/general-inventory/categories");
 });
-app.use((req,res)=>{
-res.send("Server Is Working Fine")
-})
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'build')));
+
+// Catch-all route: send back index.html for any route not handled by backend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
