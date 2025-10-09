@@ -1,5 +1,6 @@
 // models/Transaction.js
 import mongoose from 'mongoose';
+import { getNextSequence } from './Counter.js';
 
 const transactionSchema = new mongoose.Schema({
   transactionId: {
@@ -43,14 +44,6 @@ const transactionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-// Counter collection for generating sequential transaction IDs
-const counterSchema = new mongoose.Schema({
-  _id: { type: String, required: true },
-  seq: { type: Number, default: 0 }
-});
-
-const Counter = mongoose.model('Counter', counterSchema);
-
 // Pre-save hook to generate and assign transactionId
 transactionSchema.pre('save', async function(next) {
   try {
@@ -59,15 +52,11 @@ transactionSchema.pre('save', async function(next) {
       return next();
     }
     
-    // Find and update counter, or create if it doesn't exist
-    const counter = await Counter.findOneAndUpdate(
-      { _id: 'transactionId' },
-      { $inc: { seq: 1 } },
-      { new: true, upsert: true }
-    );
+    // Get next sequence atomically via shared Counter model
+    const seq = await getNextSequence('transactionId');
     
     // Format the transaction ID as CLT0001, CLT0002, etc.
-    const paddedNumber = counter.seq.toString().padStart(4, '0');
+    const paddedNumber = seq.toString().padStart(4, '0');
     this.transactionId = `CLT${paddedNumber}`;
     
     next();

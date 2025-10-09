@@ -39,6 +39,11 @@ import payrollRoutes from './routes/payrollRoutes.js'
 import facilityCategoryRoutes  from './routes/facilityCategories.js';
 import guestRoutes from './routes/guest.js';
 import otpRoutes from './routes/otp.js';
+import employeeAuthRoutes from './routes/employeeAuth.js';
+import taskRoutes from "./routes/taskRoutes.js";
+import leaveRouter from "./routes/leaveRouter.js";
+import shiftRoutes from "./routes/shiftRoutes.js";
+
 dotenv.config();
 
 // Connect to database
@@ -55,6 +60,10 @@ app.use(express.json());
 app.use(cors());
 app.use(morgan("dev"));
 
+app.use("/api/scheduling", shiftRoutes);
+app.use("/api/employee/leave", leaveRouter);
+app.use("/api/employee/tasks", taskRoutes);
+app.use('/api/employee-auth', employeeAuthRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/guests', guestRoutes);
 app.use('/api/otp', otpRoutes);

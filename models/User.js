@@ -4,8 +4,8 @@ const userSchema = new mongoose.Schema(
   {
     membershipStatus: { type: String, enum: ["Pending", "Active", "Inactive"] },
     role: { type: String, required: true, enum: ["Member", "Admin", "Guest"] },
-    App_No: { type: Number, required: true },
-    Membership_No: { type: String },
+    App_No: { type: Number, required: true, unique: true },
+    Membership_No: { type: String, unique: true },
     Member_Name: { type: String, required: true },
     "A to Z": { type: String },
     Mobile_Number: { type: Number, required: true, unique: true },

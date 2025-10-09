@@ -19,7 +19,13 @@ const tableSchema = new mongoose.Schema({
         type: String,
         enum: ["Restaurant", "Bar","Lounge Area","Outdoor"], // Restricts values
         default: "Restaurant", // Default status
-    }
+    },
+     bookedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+  bookingDate: { type: Date },
 });
 
 // Model

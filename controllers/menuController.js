@@ -295,3 +295,56 @@ export const deleteItem = async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 };
+
+export const editItem = async (req, res) => {
+  const { categoryId, subCategoryId, itemId } = req.params;
+  const { name, price, measures, description } = req.body;
+
+  try {
+    const menu = await Menu.findById(categoryId);
+    if (!menu) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const subCategory = menu.subCategories.id(subCategoryId);
+    if (!subCategory) {
+      return res.status(404).json({ message: "Subcategory not found" });
+    }
+
+    const item = subCategory.items.id(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    // Update fields
+    if (name) item.name = name;
+    if (description) item.description = description;
+    if (price !== undefined) item.price = price;
+
+    if (Array.isArray(measures)) {
+      item.measures = measures;
+    }
+
+    // Handle new image upload
+    if (req.files && req.files.length > 0) {
+      let arr = req.files;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].fieldname === "image") {
+          item.image = await uploadFile2(arr[i], "menu");
+        }
+      }
+    }
+
+    await menu.save();
+
+    return res.status(200).json({
+      message: "Item updated successfully",
+      data: item,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};

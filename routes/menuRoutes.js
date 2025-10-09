@@ -10,6 +10,7 @@ import {
     editCategory,
     editSubCategory,
     deleteCategory,
+    editItem
 } from '../controllers/menuController.js';
 import multer from 'multer';
 
@@ -66,6 +67,8 @@ router.post('/editCategory' , editCategory)
 router.delete('/deleteCategory/:id' , deleteCategory)
 router.put('/editSubCategory' , editSubCategory)
 router.delete('/deleteSubCategory/:categoryId/:subCategoryId' , deleteSubCategory)
+router.put('/:categoryId/subcategory/:subCategoryId/item/:itemId', upload.any(), editItem);
+
 
 
 

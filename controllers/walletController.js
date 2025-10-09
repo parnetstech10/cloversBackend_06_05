@@ -5,17 +5,21 @@ import TransactionModel from '../models/transactionModel.js';
 // Get wallet balance
 export const getWalletBalance = async (req, res) => {
   try {
-    const user = await UserModel.findById(req.user.id);
-    
+    const userId = req.params.userId; // use route param
+    const user = await UserModel.findById(userId);
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     res.status(200).json({ balance: user.walletBalance });
   } catch (error) {
+    console.error('Wallet balance error:', error.message); // log actual error
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+
 
 // Add money to wallet (Admin only)
 export const addMoney = async (req, res) => {

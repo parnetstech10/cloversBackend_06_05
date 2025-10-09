@@ -4,7 +4,7 @@ import employeeModel from "../models/employeeModel.js";
 const addEmployee = async (req, res) => {
   try {
     const { name, email, address, phone, position, panNo, aadharNo, accountNo, ifsc, bank , password} = req.body;
-    console.log(req.body,"wet")
+     
     const newItem = { name, email, address, phone, position, panNo, aadharNo, accountNo, ifsc, bank , password };
 
     // Handle file uploads
@@ -26,8 +26,12 @@ const addEmployee = async (req, res) => {
     
     res.status(201).json({ success: true, message: "Employee added successfully", data: employee });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message, message: "Something went wrong!" });
-  }
+ console.error("ADD EMPLOYEE ERROR:", error);
+  res.status(500).json({
+    success: false,
+    error: error.message,
+    message: "Something went wrong!",
+  });  }
 };
 
 const getEmployee = async (req, res) => {

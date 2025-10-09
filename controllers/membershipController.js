@@ -208,6 +208,7 @@ export const getActiveMemberships = async (req, res) => {
   }
 };
 
+
 export const getAllActivecard=async(req,res)=>{
   try {
     let id=req.params.id;
@@ -231,7 +232,7 @@ export const getAllRenewals = async (req, res) => {
   // console.log('getAllRenewals called');
   try {
     const data = await Renewal.find({}).sort({ createdAt: -1 }).populate('membershipId'); 
-    console.log('Renewals fetched:', data); // debug log
+    // console.log('Renewals fetched:', data); 
     return res.json(data);
   } catch (error) {
     console.error('Error in getAllRenewals:', error);
