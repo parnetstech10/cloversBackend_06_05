@@ -5,7 +5,17 @@ import Menu from "../models/menuModel.js";
 export const getMenu = async (req, res) => {
   try {
     const menu = await Menu.find({});
-    res.status(200).json(menu);
+    // Filter out deleted items before sending
+    const filtered = menu.map(cat => ({
+      _id: cat._id,
+      category: cat.category,
+      subCategories: cat.subCategories.map(sc => ({
+        _id: sc._id,
+        name: sc.name,
+        items: (sc.items || []).filter(it => it.deleted !== true)
+      }))
+    }));
+    res.status(200).json(filtered);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
   }
@@ -287,12 +297,31 @@ export const deleteItem = async (req, res) => {
       return res.status(404).json({ message: "Item not found" });
     }
 
-    subCategory.items.splice(itemIndex, 1);
+    // Soft delete instead of hard delete
+    subCategory.items[itemIndex].deleted = true;
     await menu.save();
 
-    res.status(200).json({ message: "Item deleted successfully" });
+    res.status(200).json({ message: "Item soft-deleted" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// Restore soft-deleted item
+export const restoreItem = async (req, res) => {
+  const { categoryId, subCategoryId, itemId } = req.params;
+  try {
+    const menu = await Menu.findById(categoryId);
+    if (!menu) return res.status(404).json({ message: "Category not found" });
+    const subCategory = menu.subCategories.id(subCategoryId);
+    if (!subCategory) return res.status(404).json({ message: "Subcategory not found" });
+    const item = subCategory.items.id(itemId);
+    if (!item) return res.status(404).json({ message: "Item not found" });
+    item.deleted = false;
+    await menu.save();
+    res.status(200).json({ message: "Item restored" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

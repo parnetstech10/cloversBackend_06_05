@@ -1,6 +1,8 @@
 import { uploadFile2 } from '../middleware/aws.js';
 import Guest from '../models/guest.js';
 import User from '../models/User.js';
+import OneDayAccess from '../models/OneDayAccess.js';
+import GuestOption from '../models/GuestOption.js';
 
 // In-memory OTP storage (use Redis in production)
 const otpStore = new Map();
@@ -700,6 +702,214 @@ export const updateWalletBalance = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error updating wallet balance",
+      error: error.message
+    });
+  }
+};
+
+// One-Day Access Functions
+
+// Grant One-Day Access to a guest
+export const grantOneDayAccess = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { 
+      accessDate, 
+      areas, 
+      activities, 
+      services, 
+      chargesApplied, 
+      paymentMethod = 'cash',
+      grantedBy 
+    } = req.body;
+
+    // Validate required fields
+    if (!accessDate || !areas || !activities || !services) {
+      return res.status(400).json({
+        success: false,
+        message: "Access date, areas, activities, and services are required"
+      });
+    }
+
+    // Find the guest
+    const guest = await Guest.findById(id);
+    if (!guest) {
+      return res.status(404).json({
+        success: false,
+        message: "Guest not found"
+      });
+    }
+
+    // Calculate total charges if applicable
+    let totalCharges = 0;
+    if (chargesApplied) {
+      // Get option prices
+      const areaOptions = await GuestOption.find({ 
+        type: 'area', 
+        name: { $in: areas } 
+      });
+      const activityOptions = await GuestOption.find({ 
+        type: 'activity', 
+        name: { $in: activities } 
+      });
+      const serviceOptions = await GuestOption.find({ 
+        type: 'service', 
+        name: { $in: services } 
+      });
+
+      totalCharges = [
+        ...areaOptions.map(opt => opt.price || 0),
+        ...activityOptions.map(opt => opt.price || 0),
+        ...serviceOptions.map(opt => opt.price || 0)
+      ].reduce((sum, price) => sum + price, 0);
+    }
+
+    // Set expiry time (end of the access date)
+    const accessDateObj = new Date(accessDate);
+    const expiresAt = new Date(accessDateObj);
+    expiresAt.setHours(23, 59, 59, 999); // End of day
+
+    // Create One-Day Access record
+    const oneDayAccess = new OneDayAccess({
+      guestId: id,
+      guestName: guest.Member_Name,
+      accessDate: accessDateObj,
+      areas,
+      activities,
+      services,
+      chargesApplied,
+      totalCharges,
+      grantedBy: grantedBy || req.user?.id,
+      paymentMethod,
+      paymentStatus: chargesApplied ? 'pending' : 'paid',
+      expiresAt
+    });
+
+    await oneDayAccess.save();
+
+    res.status(201).json({
+      success: true,
+      message: "One-Day Access granted successfully",
+      data: oneDayAccess
+    });
+
+  } catch (error) {
+    console.error("Error granting One-Day Access:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to grant One-Day Access",
+      error: error.message
+    });
+  }
+};
+
+// Get One-Day Access records for a guest
+export const getOneDayAccessRecords = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, limit = 10, page = 1 } = req.query;
+
+    const query = { guestId: id };
+    if (status) {
+      query.status = status;
+    }
+
+    const skip = (page - 1) * limit;
+    const records = await OneDayAccess.find(query)
+      .sort({ accessDate: -1 })
+      .limit(parseInt(limit))
+      .skip(skip)
+      .populate('grantedBy', 'Member_Name');
+
+    const total = await OneDayAccess.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: records,
+      pagination: {
+        current: parseInt(page),
+        pageSize: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching One-Day Access records:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch One-Day Access records",
+      error: error.message
+    });
+  }
+};
+
+// Update One-Day Access status
+export const updateOneDayAccessStatus = async (req, res) => {
+  try {
+    const { accessId } = req.params;
+    const { status, paymentStatus, posTransactionId } = req.body;
+
+    const access = await OneDayAccess.findById(accessId);
+    if (!access) {
+      return res.status(404).json({
+        success: false,
+        message: "One-Day Access record not found"
+      });
+    }
+
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (paymentStatus) updateData.paymentStatus = paymentStatus;
+    if (posTransactionId) updateData.posTransactionId = posTransactionId;
+
+    const updatedAccess = await OneDayAccess.findByIdAndUpdate(
+      accessId,
+      updateData,
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "One-Day Access status updated successfully",
+      data: updatedAccess
+    });
+
+  } catch (error) {
+    console.error("Error updating One-Day Access status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update One-Day Access status",
+      error: error.message
+    });
+  }
+};
+
+// Get expiring guests (for notification system)
+export const getExpiringGuests = async (req, res) => {
+  try {
+    const { days = 7 } = req.query; // Default to 7 days ahead
+    
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + parseInt(days));
+    
+    const expiringGuests = await OneDayAccess.find({
+      expiresAt: { $lte: futureDate },
+      status: 'active',
+      notificationSent: false
+    }).populate('guestId', 'Member_Name Guest_Mo_No email');
+
+    res.status(200).json({
+      success: true,
+      data: expiringGuests,
+      count: expiringGuests.length
+    });
+
+  } catch (error) {
+    console.error("Error fetching expiring guests:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch expiring guests",
       error: error.message
     });
   }

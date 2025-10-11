@@ -84,6 +84,12 @@ const liveOrderSchema = new mongoose.Schema(
       type: String,
       default: "card",
     },
+    staffName: {
+      type: String,
+    },
+    customerName: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

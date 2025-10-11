@@ -5,7 +5,6 @@ const { Schema, model } = mongoose;
 
 const membershipSchema = new Schema({
   // name: { type: String },
-  membershipId: { type: String, unique: true },
   description: { type: String },
   benefits: [String],
   price: { type: Number, required: true },

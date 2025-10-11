@@ -13,6 +13,7 @@ const itemSchema = new mongoose.Schema({
   measures: [measureSchema], // optional array of measure objects
   description: { type: String , required:true},
   image: { type: String },
+  deleted: { type: Boolean, default: false },
 });
 
 const menuSchema = new mongoose.Schema({

@@ -10,6 +10,8 @@ const orderSchema = new mongoose.Schema({
     },
   ],
   total: { type: Number, required: true },
+  staffName: { type: String },
+  customerName: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

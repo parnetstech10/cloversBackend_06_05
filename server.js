@@ -38,6 +38,7 @@ import payrollRoutes from './routes/payrollRoutes.js'
 
 import facilityCategoryRoutes  from './routes/facilityCategories.js';
 import guestRoutes from './routes/guest.js';
+import guestOptionRoutes from './routes/guestOptionRoutes.js';
 import otpRoutes from './routes/otp.js';
 import employeeAuthRoutes from './routes/employeeAuth.js';
 import taskRoutes from "./routes/taskRoutes.js";
@@ -66,6 +67,7 @@ app.use("/api/employee/tasks", taskRoutes);
 app.use('/api/employee-auth', employeeAuthRoutes);
 app.use("/api/users", userRoutes);
 app.use('/api/guests', guestRoutes);
+app.use('/api/guest-options', guestOptionRoutes);
 app.use('/api/otp', otpRoutes);
 app.use("/api/admin", authRouts);
 // Menu route

@@ -156,7 +156,10 @@ export const createLiveOrder = async (req, res) => {
       discount,
       carddiscount, // This is the discount percentage (e.g., 10, 15, 20)
       roomServiceCharge,
-      fixedServiceCharge
+      fixedServiceCharge,
+      category,
+      staffName,
+      customerName
     } = req.body;
 
     // Validate total to ensure it's a number
@@ -213,7 +216,7 @@ export const createLiveOrder = async (req, res) => {
       const foodOrderData = {
         serviceType,
         items: foodItems,
-        category: 'resturant',
+        category: category || 'resturant', // Use provided category or default to restaurant
         // Subtotal - discount + service charges
         total: Number((foodTotal - foodDiscount + foodRoomServiceCharge + foodFixedServiceCharge).toFixed(2)),
         card,
@@ -221,7 +224,9 @@ export const createLiveOrder = async (req, res) => {
         cardId,
         userId,
         roomServiceCharge: Number(foodRoomServiceCharge.toFixed(2)),
-        fixedServiceCharge: Number(foodFixedServiceCharge.toFixed(2))
+        fixedServiceCharge: Number(foodFixedServiceCharge.toFixed(2)),
+        staffName: staffName || null,
+        customerName: customerName || null
       };
       
       // Add location data based on service type
@@ -259,7 +264,7 @@ export const createLiveOrder = async (req, res) => {
       const alcoholOrderData = {
         serviceType,
         items: alcoholItems,
-        category: 'bar',
+        category: category || 'bar', // Use provided category or default to bar
         // Subtotal - discount + service charges
         total: Number((alcoholTotal - alcoholDiscount + alcoholRoomServiceCharge + alcoholFixedServiceCharge).toFixed(2)),
         card,
@@ -267,7 +272,9 @@ export const createLiveOrder = async (req, res) => {
         cardId,
         userId,
         roomServiceCharge: Number(alcoholRoomServiceCharge.toFixed(2)),
-        fixedServiceCharge: Number(alcoholFixedServiceCharge.toFixed(2))
+        fixedServiceCharge: Number(alcoholFixedServiceCharge.toFixed(2)),
+        staffName: staffName || null,
+        customerName: customerName || null
       };
       
       // Add location data based on service type

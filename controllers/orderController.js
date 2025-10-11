@@ -2,14 +2,14 @@ import Order from "../models/orderModel.js"
 
 // Create a new order
 export const createOrder = async (req, res) => {
-  const { table, items, total } = req.body;
+  const { table, items, total, staffName, customerName } = req.body;
 
   if (!table || !items || items.length === 0 || !total) {
     return res.status(400).json({ error: 'Invalid request data' });
   }
 
   try {
-    const order = new Order({ table, items, total });
+    const order = new Order({ table, items, total, staffName, customerName });
     await order.save();
     res.status(201).json({ message: 'Order created successfully', order });
   } catch (error) {

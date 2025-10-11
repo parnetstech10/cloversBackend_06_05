@@ -4,6 +4,7 @@ import Room, { RoomType } from '../models/roomModel.js';
 export const addRoom = async (req, res) => {
     try {
         const { roomType } = req.body;
+        const { roomNumber } = req.body;
         
         if (!mongoose.Types.ObjectId.isValid(roomType)) {
             const roomTypeDoc = await RoomType.findOne({ name: roomType });
@@ -16,6 +17,16 @@ export const addRoom = async (req, res) => {
             }
         }
         
+        // Check duplicate room number before attempting to save
+        if (roomNumber != null) {
+            const existing = await Room.findOne({ roomNumber });
+            if (existing) {
+                return res.status(400).json({ 
+                    error: 'Room number already exists. Please choose a different room number.' 
+                });
+            }
+        }
+
         const room = new Room(req.body);
         console.log(req.body);
 
@@ -23,6 +34,12 @@ export const addRoom = async (req, res) => {
         res.status(201).json({ message: 'Room added successfully', room });
     } catch (error) {
         console.log("Room creation error:", error);
+        // Map Mongo duplicate key error to a friendly message
+        if (error && (error.code === 11000 || (error.keyPattern && error.keyPattern.roomNumber))) {
+            return res.status(400).json({ 
+                error: 'Room number already exists. Please choose a different room number.' 
+            });
+        }
         res.status(500).json({ error: error.message });
     }
 };

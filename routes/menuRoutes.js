@@ -10,7 +10,8 @@ import {
     editCategory,
     editSubCategory,
     deleteCategory,
-    editItem
+    editItem,
+    restoreItem
 } from '../controllers/menuController.js';
 import multer from 'multer';
 
@@ -62,14 +63,18 @@ router.post('/:categoryId/subcategory', addSubCategory); // Add a new subcategor
 router.post('/:categoryId/subcategory/:subCategoryId/item', upload.any() ,addItem); // Add a new item with or without measures
 router.delete('/:categoryId/subcategory/:subCategoryId', deleteSubCategory); // Delete a subcategory
 router.delete('/:categoryId/subcategory/:subCategoryId/item/:itemId', deleteItem); // Delete an item
+// Soft delete and restore endpoints
+router.put('/:categoryId/subcategory/:subCategoryId/item/:itemId/soft-delete', (req, res, next) => {
+  // Reuse deleteItem semantics for soft-delete
+  return deleteItem(req, res, next);
+});
+router.put('/:categoryId/subcategory/:subCategoryId/item/:itemId/restore', restoreItem);
 router.get('/getCategory' , getCategory)
 router.post('/editCategory' , editCategory)
 router.delete('/deleteCategory/:id' , deleteCategory)
 router.put('/editSubCategory' , editSubCategory)
 router.delete('/deleteSubCategory/:categoryId/:subCategoryId' , deleteSubCategory)
 router.put('/:categoryId/subcategory/:subCategoryId/item/:itemId', upload.any(), editItem);
-
-
 
 
 

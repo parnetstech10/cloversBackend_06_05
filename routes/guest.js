@@ -10,7 +10,11 @@ import {
   getGuestsByStatus,
   updateWalletBalance,
   verifyOTPAndRegister,
-  resendOTP
+  resendOTP,
+  grantOneDayAccess,
+  getOneDayAccessRecords,
+  updateOneDayAccessStatus,
+  getExpiringGuests
 } from '../controllers/guest.js';
 const router = express.Router();
 import multer from 'multer';
@@ -58,5 +62,13 @@ router.delete('/:id', deleteGuest);
 
 // Update wallet balance
 router.patch('/:id/wallet', updateWalletBalance);
+
+// One-Day Access routes
+router.post('/:id/one-day-access', grantOneDayAccess);
+router.get('/:id/one-day-access', getOneDayAccessRecords);
+router.put('/one-day-access/:accessId', updateOneDayAccessStatus);
+
+// Expiry management
+router.get('/expiring', getExpiringGuests);
 
 export default router;
