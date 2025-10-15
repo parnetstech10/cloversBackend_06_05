@@ -40,7 +40,7 @@ const oneDayAccessSchema = new mongoose.Schema(
     grantedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+    required: false,
     },
     // POS integration fields
     posTransactionId: {

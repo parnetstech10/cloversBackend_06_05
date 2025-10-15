@@ -1,4 +1,5 @@
 import { uploadFile2 } from '../middleware/aws.js';
+import mongoose from 'mongoose';
 import Guest from '../models/guest.js';
 import User from '../models/User.js';
 import OneDayAccess from '../models/OneDayAccess.js';
@@ -770,7 +771,15 @@ export const grantOneDayAccess = async (req, res) => {
     expiresAt.setHours(23, 59, 59, 999); // End of day
 
     // Create One-Day Access record
-    const oneDayAccess = new OneDayAccess({
+    // Resolve grantedBy only if it is a valid ObjectId or we have an authenticated user
+    let safeGrantedBy;
+    if (grantedBy && mongoose.isValidObjectId(grantedBy)) {
+      safeGrantedBy = grantedBy;
+    } else if (req.user?.id && mongoose.isValidObjectId(req.user.id)) {
+      safeGrantedBy = req.user.id;
+    }
+
+    const baseDoc = {
       guestId: id,
       guestName: guest.Member_Name,
       accessDate: accessDateObj,
@@ -779,11 +788,15 @@ export const grantOneDayAccess = async (req, res) => {
       services,
       chargesApplied,
       totalCharges,
-      grantedBy: grantedBy || req.user?.id,
       paymentMethod,
       paymentStatus: chargesApplied ? 'pending' : 'paid',
       expiresAt
-    });
+    };
+    if (safeGrantedBy) {
+      baseDoc.grantedBy = safeGrantedBy;
+    }
+
+    const oneDayAccess = new OneDayAccess(baseDoc);
 
     await oneDayAccess.save();
 

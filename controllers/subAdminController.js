@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import SubAdminModel from '../models/subAdmin.js';
+import bcrypt from 'bcryptjs';
 
 // Get All Sub Admins
 export const getSubAdmins = asyncHandler(async (req, res) => {
@@ -21,19 +22,47 @@ export const getSubAdminById = asyncHandler(async (req, res) => {
 
 // Create a New Sub Admin
 export const createSubAdmin = asyncHandler(async (req, res) => {
-    const { name, email, role } = req.body;
+    const { name, email, role, password, permissions, username } = req.body || {};
 
-    // Check for duplicate email
-    const existingSubAdmin = await SubAdminModel.findOne({ email });
-    if (existingSubAdmin) {
+    if (!name || !email || !role) {
+        res.status(400);
+        throw new Error('Name, email and role are required');
+    }
+    if (!password) {
+        res.status(400);
+        throw new Error('Password is required');
+    }
+
+    // Check for duplicate email/username
+    const existingByEmail = await SubAdminModel.findOne({ email });
+    if (existingByEmail) {
         res.status(400);
         throw new Error('Email already in use');
     }
+    if (username) {
+        const existingByUsername = await SubAdminModel.findOne({ username });
+        if (existingByUsername) {
+            res.status(400);
+            throw new Error('Username already in use');
+        }
+    }
 
-    const subAdmin = new SubAdminModel({ name, email, role });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const subAdmin = new SubAdminModel({
+        name,
+        email,
+        role,
+        username: username || undefined,
+        password: hashedPassword,
+        permissions: Array.isArray(permissions) ? permissions : [],
+    });
 
     const newSubAdmin = await subAdmin.save();
-    res.status(201).json(newSubAdmin);
+    // Omit password in response
+    const { password: _pw, ...safe } = newSubAdmin.toObject();
+    res.status(201).json(safe);
 });
 
 // Update Sub Admin by subAdminId

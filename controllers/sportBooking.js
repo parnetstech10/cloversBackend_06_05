@@ -46,7 +46,20 @@ export const getBookingById = async (req, res) => {
 // Update a booking by ID
 export const updateBooking = async (req, res) => {
   try {
-    // Validate request body
+    // Allow lightweight status update via PUT (even if extra fields are present)
+    if (req.body && typeof req.body.status === 'string') {
+      const updatedOnlyStatus = await sportBookingM.findByIdAndUpdate(
+        req.params.id,
+        { status: req.body.status },
+        { new: true }
+      );
+      if (!updatedOnlyStatus) {
+        return res.status(404).json({ error: "Booking not found." });
+      }
+      return res.status(200).json({ message: "Booking updated successfully!", booking: updatedOnlyStatus });
+    }
+
+    // Otherwise, validate full payload for full updates
     const { error } = createBookingSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ error: error.details[0].message });
@@ -59,6 +72,27 @@ export const updateBooking = async (req, res) => {
     res.status(200).json({ message: "Booking updated successfully!", booking: updatedBooking });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Update only status (partial update for status field)
+export const updateBookingStatus = async (req, res) => {
+  try {
+    const { status } = req.body || {};
+    if (!status) {
+      return res.status(400).json({ error: 'status is required' });
+    }
+    const updated = await sportBookingM.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!updated) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+    return res.status(200).json({ message: 'Status updated', booking: updated });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 

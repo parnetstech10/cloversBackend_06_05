@@ -46,7 +46,20 @@ export const getBookingById = async (req, res) => {
 // Update a booking by ID
 export const updateBooking = async (req, res) => {
   try {
-    // Validate request body
+    // Allow status-only update without full schema validation
+    if (req.body && typeof req.body.status === 'string') {
+      const updatedOnlyStatus = await FacilityBooking.findByIdAndUpdate(
+        req.params.id,
+        { status: req.body.status },
+        { new: true }
+      );
+      if (!updatedOnlyStatus) {
+        return res.status(404).json({ error: "Booking not found." });
+      }
+      return res.status(200).json({ message: "Booking updated successfully!", booking: updatedOnlyStatus });
+    }
+
+    // Otherwise require full payload validation
     const { error } = createBookingSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ error: error.details[0].message });

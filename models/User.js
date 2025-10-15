@@ -34,7 +34,13 @@ const userSchema = new mongoose.Schema(
     password: { type: String },
     dependent:{type:String, enum: ["Spouse", "Children"] },
     Spouse:{type:String},
-   	Children :{type:String}
+    	Children :{type:String},
+    // Password reset fields
+    resetPasswordToken: { type: String, index: true },
+    resetPasswordExpires: { type: Date },
+    // Email OTP for password reset
+    emailOtpCode: { type: String },
+    emailOtpExpires: { type: Date }
   },
   {
     timestamps: true,

@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { check, validationResult } from "express-validator";
 import { uploadFile2 } from '../middleware/aws.js';
 import { getNextSequence } from '../models/Counter.js';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 const validateMember = [
   // check("Membership_No").notEmpty().withMessage("Membership number is required"),
@@ -228,6 +230,193 @@ export const deleteUser = async (req, res) => {
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Minimal forgot password handler (stub). Integrate email sending later.
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Do not reveal whether the email exists in production
+      return res.status(404).json({ message: 'No account found with this email' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = expiresAt;
+    await user.save();
+
+    // Prefer mobile deep link if APP_BASE_URL is empty
+    const baseUrl = process.env.APP_BASE_URL && process.env.APP_BASE_URL.trim().length > 0
+      ? process.env.APP_BASE_URL
+      : 'clovers://';
+    const resetUrl = `${baseUrl.replace(/\/$/, '')}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+
+    // Configure transporter (use env vars in production)
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || process.env.SMTP_USER,
+        pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.MAIL_FROM || 'no-reply@thecloversclub.in',
+      to: email,
+      subject: 'Reset your Clovers Club password',
+      html: `
+        <p>Hello ${user.Member_Name || ''},</p>
+        <p>You requested to reset your password. Click the link below to set a new password. This link will expire in 15 minutes.</p>
+        <p><a href="${resetUrl}" target="_blank">Reset Password</a></p>
+        <p>If you didn't request this, you can ignore this email.</p>
+      `,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      return res.status(200).json({ message: 'Password reset email sent' });
+    } catch (mailError) {
+      // Dev fallback: allow testing without working SMTP
+      if (process.env.EMAIL_DEV_MODE === 'true') {
+        console.log('[DEV ONLY] Password reset link:', resetUrl);
+        return res.status(200).json({ message: 'Password reset link generated (dev mode)', resetUrl });
+      }
+      throw mailError;
+    }
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({ message: 'Failed to process request' });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, email, password } = req.body || {};
+    if (!token || !email || !password) {
+      return res.status(400).json({ message: 'Token, email and new password are required' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({ email, resetPasswordToken: tokenHash, resetPasswordExpires: { $gt: new Date() } });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ message: 'Failed to reset password' });
+  }
+};
+
+export const sendPasswordOtp = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'No account found with this email' });
+
+    // Generate 6-digit OTP
+    const otp = (Math.floor(100000 + Math.random() * 900000)).toString();
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 5); // 5 minutes
+    user.emailOtpCode = otp;
+    user.emailOtpExpires = expiresAt;
+    await user.save();
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER || process.env.SMTP_USER,
+        pass: process.env.EMAIL_PASS || process.env.SMTP_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.MAIL_FROM || 'no-reply@thecloversclub.in',
+      to: email,
+      subject: 'Your Clovers Club password reset OTP',
+      html: `<p>Your OTP is <b>${otp}</b>. It expires in 5 minutes.</p>`
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+    } catch (mailError) {
+      if (process.env.EMAIL_DEV_MODE === 'true') {
+        console.log('[DEV ONLY] Password reset OTP:', otp);
+      } else {
+        throw mailError;
+      }
+    }
+
+    return res.status(200).json({ message: 'OTP sent to your email' });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    return res.status(500).json({ message: 'Failed to send OTP' });
+  }
+};
+
+export const verifyPasswordOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body || {};
+    if (!email || !otp) return res.status(400).json({ message: 'Email and OTP are required' });
+
+    const user = await User.findOne({ email });
+    if (!user || !user.emailOtpCode || !user.emailOtpExpires) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+    const now = new Date();
+    if (user.emailOtpCode !== otp || user.emailOtpExpires <= now) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+    return res.status(200).json({ message: 'OTP verified' });
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    return res.status(500).json({ message: 'Failed to verify OTP' });
+  }
+};
+
+export const resetPasswordWithOtp = async (req, res) => {
+  try {
+    const { email, otp, password } = req.body || {};
+    if (!email || !otp || !password) return res.status(400).json({ message: 'Email, OTP and password are required' });
+
+    const user = await User.findOne({ email });
+    if (!user || user.emailOtpCode !== otp || user.emailOtpExpires <= new Date()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.emailOtpCode = undefined;
+    user.emailOtpExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (error) {
+    console.error('Reset with OTP error:', error);
+    return res.status(500).json({ message: 'Failed to reset password' });
   }
 };
 

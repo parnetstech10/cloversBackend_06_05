@@ -6,12 +6,17 @@ import {
   getUserProfile,
   getAllusers,
   updateMember,
-// <<<<<<< HEAD
+  // <<<<<<< HEAD
   updateMemberImg,
   getMemberImg,
-// =======
-  deleteUser
-// >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
+  // =======
+  deleteUser,
+  forgotPassword,
+  resetPassword,
+  sendPasswordOtp,
+  verifyPasswordOtp,
+  resetPasswordWithOtp
+  // >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
 } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -30,6 +35,12 @@ const upload = multer();
 // Public routes
 router.post('/register', registerUser);
 router.post('/login', authUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+// OTP password reset flow
+router.post('/password-otp', sendPasswordOtp);
+router.post('/password-otp/verify', verifyPasswordOtp);
+router.post('/password-otp/reset', resetPasswordWithOtp);
 router.get("/getAllusers",getAllusers);
 // <<<<<<< HEAD
 // router.put("/updatemember/:id",upload.any(),protect,updateMember)

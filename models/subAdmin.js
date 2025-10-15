@@ -1,29 +1,15 @@
 import mongoose from 'mongoose';
 
-const subAdminSchema = new mongoose.Schema(
-  {
-    subAdminId: {
-      type: String,
-      unique: true,
-    },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    role: {
-      type: String,
-      required: true,
-      enum: ['Manager', 'Assistant', 'Co-ordinator'],
-    },
-  },
-  { timestamps: true }
-);
+// models/subAdmin.js
+const subAdminSchema = new mongoose.Schema({
+  subAdminId: { type: String, unique: true },
+  name: { type: String, required: true, trim: true },
+  email: { type: String, required: true, unique: true },
+  username: { type: String, unique: true, sparse: true }, // optional
+  password: { type: String, required: true },             // REQUIRED for login
+  role: { type: String, required: true, enum: ['Manager','Assistant','Co-ordinator'] },
+  permissions: { type: [String], default: [] },
+}, { timestamps: true });
 
 // Pre-save hook to generate unique subAdminId
 subAdminSchema.pre('save', async function (next) {
