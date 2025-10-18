@@ -9,7 +9,9 @@ const featureSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["active", "inactive"],
+        lowercase: true,
+        trim: true,
+        enum: ["active", "maintenance", "inactive"],
         required: [true, "Status is required"],
     },
     type: {

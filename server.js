@@ -30,6 +30,13 @@ import Transaction from './routes/transactionRoutes.js';
 import Wallet from './routes/walletRoute.js';
 import SportBookingRoutes from "./routes/sportBooking.js";
 import generalInventoryRoutes from './routes/generalinventoryRoutes.js';
+import supplierRoutes from './routes/supplierRoutes.js';
+import purchaseOrderRoutes from './routes/purchaseOrderRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import grnRoutes from './routes/grnRoutes.js';
+import supplierInvoiceRoutes from './routes/supplierInvoiceRoutes.js';
+import inventoryRoutes from './routes/inventory.js';
+import inventoryDistributionRoutes from './routes/inventoryDistributionRoutes.js';
 // <<<<<<< HEAD
 import BookfacilityRoutes from "./routes/BookFacility.js"
 import recipeRoutes from './routes/recipeRoutes.js';
@@ -103,6 +110,13 @@ app.use("/api/sportbooking",SportBookingRoutes);
 app.use('/api/restaurant', recipeRoutes);
 app.use('/api/facility-categories', facilityCategoryRoutes);
 app.use("/api/general-inventory", generalInventoryRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/purchase-orders', purchaseOrderRoutes);
+app.use('/api/grns', grnRoutes);
+app.use('/api/supplier-invoices', supplierInvoiceRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/inventory-distribution', inventoryDistributionRoutes);
 app.use("/api/facility/bookfacility",BookfacilityRoutes)
 app.use('/api/payroll',payrollRoutes)
 // >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c

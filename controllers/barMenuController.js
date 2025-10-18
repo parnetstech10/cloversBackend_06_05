@@ -282,17 +282,26 @@ export const deleteItem = async (req, res) => {
   }
 };
 
-// PUT /api/menuBar/editMenuItem
+// PUT /api/menuBar/:categoryId/subcategory/:subCategoryId/item/:itemId (Updated to match new structure)
 export const editMenuItem = async (req, res) => {
+  const { categoryId, subCategoryId, itemId } = req.params;
+  const { name, price, description, measures } = req.body;
+  
+  console.log("Backend - editMenuItem called with:");
+  console.log("categoryId:", categoryId);
+  console.log("subCategoryId:", subCategoryId);
+  console.log("itemId:", itemId);
+  console.log("req.body:", req.body);
+  console.log("measures from req.body:", measures);
+  console.log("measures type:", typeof measures);
+  
   try {
-    const { itemId, categoryId, brandId, name, price, description, measures } = req.body;
-    
     const menu = await MenuBar.findById(categoryId);
     if (!menu) {
       return res.status(404).json({ message: "Category not found" });
     }
     
-    const brand = menu.brand.id(brandId);
+    const brand = menu.brand.id(subCategoryId);
     if (!brand) {
       return res.status(404).json({ message: "Brand not found" });
     }
@@ -306,17 +315,31 @@ export const editMenuItem = async (req, res) => {
     if (name) item.name = name;
     if (price !== undefined) item.price = price;
     if (description !== undefined) item.description = description;
-    if (measures && Array.isArray(measures)) item.measures = measures;
+    
+    // Handle measures - parse if it's a string
+    let parsedMeasures = measures;
+    if (typeof measures === 'string') {
+      try {
+        parsedMeasures = JSON.parse(measures);
+        console.log("Parsed measures:", parsedMeasures);
+      } catch (error) {
+        console.log("Error parsing measures:", error);
+      }
+    }
+    
+    if (parsedMeasures && Array.isArray(parsedMeasures)) {
+      item.measures = parsedMeasures;
+      console.log("Set item.measures to:", item.measures);
+    }
     
     // Handle image upload if included
-   if (req.files && req.files.length > 0) {
-  for (const file of req.files) {
-    if (file.fieldname === "image") {
-      item.image = await uploadFile2(file, "menu");
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        if (file.fieldname === "image") {
+          item.image = await uploadFile2(file, "bar");
+        }
+      }
     }
-  }
-}
-
     
     await menu.save();
     res.status(200).json({ message: "Item updated successfully", item });
@@ -326,36 +349,66 @@ export const editMenuItem = async (req, res) => {
   }
 };
 
-// DELETE /api/menuBar/deleteMenuItem/:categoryId/:itemId
-export const deleteMenuItem = async (req, res) => {
+// DELETE /api/menuBar/:categoryId/subcategory/:subCategoryId/item/:itemId (Soft Delete)
+export const softDeleteItem = async (req, res) => {
+  const { categoryId, subCategoryId, itemId } = req.params;
+  const { permanent } = req.query;
+
   try {
-    const { categoryId, itemId } = req.params;
-    
     const menu = await MenuBar.findById(categoryId);
     if (!menu) {
       return res.status(404).json({ message: "Category not found" });
     }
-    
-    // Look through all brands for the item
-    let itemFound = false;
-    
-    for (const brand of menu.brand) {
-      const itemIndex = brand.items.findIndex(item => item._id.toString() === itemId);
-      
-      if (itemIndex !== -1) {
-        // Item found, delete it
-        brand.items.splice(itemIndex, 1);
-        itemFound = true;
-        break;
-      }
+
+    const brand = menu.brand.id(subCategoryId);
+    if (!brand) {
+      return res.status(404).json({ message: "Brand not found" });
     }
-    
-    if (!itemFound) {
+
+    const item = brand.items.id(itemId);
+    if (!item) {
       return res.status(404).json({ message: "Item not found" });
     }
-    
+
+    if (permanent === 'true') {
+      // Permanent delete
+      brand.items.pull(itemId);
+      await menu.save();
+      return res.status(200).json({ message: "Item permanently deleted successfully" });
+    } else {
+      // Soft delete
+      item.deleted = true;
+      await menu.save();
+      return res.status(200).json({ message: "Item moved to trash successfully" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// PUT /api/menuBar/:categoryId/subcategory/:subCategoryId/item/:itemId/restore
+export const restoreItem = async (req, res) => {
+  const { categoryId, subCategoryId, itemId } = req.params;
+
+  try {
+    const menu = await MenuBar.findById(categoryId);
+    if (!menu) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const brand = menu.brand.id(subCategoryId);
+    if (!brand) {
+      return res.status(404).json({ message: "Brand not found" });
+    }
+
+    const item = brand.items.id(itemId);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    item.deleted = false;
     await menu.save();
-    res.status(200).json({ message: "Item deleted successfully" });
+    res.status(200).json({ message: "Item restored successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

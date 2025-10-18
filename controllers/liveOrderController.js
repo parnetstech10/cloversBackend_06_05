@@ -9,9 +9,17 @@ const transaction = async (cardId, amount) => {
 
     let card = await membershipCard.findById(cardId);
     if (card) {
-      card.creditLimit = card.creditLimit - amount;
+      const balanceAfter = card.creditLimit - amount;
+      card.creditLimit = balanceAfter;
       await card.save()
-      await transactionModel.create({ amount, type: "dr", category: card?.membershipName, description: "Membership Cart payment", user: card.membershipId });
+      await transactionModel.create({ 
+        amount, 
+        type: "dr", 
+        category: card?.membershipName, 
+        description: "Membership Cart payment", 
+        user: card.membershipId,
+        balanceAfter: balanceAfter
+      });
     }
 
   } catch (error) {

@@ -13,6 +13,7 @@ const itemBarSchema = new mongoose.Schema({
   description: { type: String },
   measures: [measureBarSchema], // optional array of measure objects
   image: { type: String },
+  deleted: { type: Boolean, default: false }, // soft delete flag
 });
 
 const menuBarSchema = new mongoose.Schema({

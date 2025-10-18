@@ -15,7 +15,8 @@ import {
   getBarMenu,
   getCategory,
   editMenuItem,
-  deleteMenuItem
+  softDeleteItem,
+  restoreItem
 } from "../controllers/barMenuController.js";
 
 // var storage = multer.diskStorage({
@@ -71,14 +72,14 @@ router.get("/", getBarMenu); // Fetch the menu
 router.post("/category", addBarMenuCategory); // Add a new category
 router.post("/:categoryId/brand", addBrand); // Add a new subcategory
 router.post("/:categoryId/brand/:brandId/item", upload.any(), addItem); // Add a new item with or without measures
+router.put("/:categoryId/subcategory/:subCategoryId/item/:itemId", upload.any(), editMenuItem); // Edit an item
 router.delete('/:categoryId/subcategory/:subCategoryId', deleteSubCategory); // Delete a subcategory
-router.delete('/:categoryId/subcategory/:subCategoryId/item/:itemId', deleteItem); // Delete an item
+router.delete('/:categoryId/subcategory/:subCategoryId/item/:itemId', softDeleteItem); // Soft delete an item
+router.put('/:categoryId/subcategory/:subCategoryId/item/:itemId/restore', restoreItem); // Restore a soft deleted item
 router.get("/getCategory", getCategory);
 router.post('/editCategory' , editCategory)
 router.delete('/deleteCategory/:id' , deleteCategory)
 router.put('/editSubCategory' , editBrand)
 router.delete('/deleteSubCategory/:categoryId/:subCategoryId' , deleteSubCategory)
-router.put('/editMenuItem', editMenuItem);
-router.delete('/deleteMenuItem/:categoryId/:itemId', deleteMenuItem);
 
 export default router;

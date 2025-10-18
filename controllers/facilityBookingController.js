@@ -46,8 +46,18 @@ export const getBookingById = async (req, res) => {
 // Update a booking by ID
 export const updateBooking = async (req, res) => {
   try {
-    // Allow status-only update without full schema validation
-    if (req.body && typeof req.body.status === 'string') {
+    console.log("Update facility booking request body:", req.body);
+    console.log("Update facility booking ID:", req.params.id);
+    
+    // Check if this is a status-only update (only status field provided)
+    const bodyKeys = Object.keys(req.body);
+    const isStatusOnlyUpdate = bodyKeys.length === 1 && bodyKeys.includes('status') && typeof req.body.status === 'string';
+    
+    console.log("Body keys:", bodyKeys);
+    console.log("Is status only update:", isStatusOnlyUpdate);
+    
+    if (isStatusOnlyUpdate) {
+      // Handle status-only update
       const updatedOnlyStatus = await FacilityBooking.findByIdAndUpdate(
         req.params.id,
         { status: req.body.status },
@@ -56,20 +66,25 @@ export const updateBooking = async (req, res) => {
       if (!updatedOnlyStatus) {
         return res.status(404).json({ error: "Booking not found." });
       }
-      return res.status(200).json({ message: "Booking updated successfully!", booking: updatedOnlyStatus });
+      const populated = await FacilityBooking.findById(updatedOnlyStatus._id).populate("memberId").populate("facilityId");
+      return res.status(200).json({ message: "Booking updated successfully!", booking: populated });
     }
 
-    // Otherwise require full payload validation
+    // Handle full update - validate full payload
+    console.log("Processing full update...");
     const { error } = createBookingSchema.validate(req.body);
     if (error) {
+      console.log("Validation error:", error.details[0].message);
       return res.status(400).json({ error: error.details[0].message });
     }
 
+    console.log("Updating facility booking with payload:", req.body);
     const updatedBooking = await FacilityBooking.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!updatedBooking) {
       return res.status(404).json({ error: "Booking not found." });
     }
-    res.status(200).json({ message: "Booking updated successfully!", booking: updatedBooking });
+    const populated = await FacilityBooking.findById(updatedBooking._id).populate("memberId").populate("facilityId");
+    res.status(200).json({ message: "Booking updated successfully!", booking: populated });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

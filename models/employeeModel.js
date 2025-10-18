@@ -19,6 +19,8 @@ const employeeSchema = new mongoose.Schema({
   
   // Payroll integration fields
   basicSalary: { type: Number, default: 0 },
+  dailySalary: { type: Number, default: 0 }, // For leave deduction calculations
+  department: { type: String, default: "General" }, // Department for leave management
   joiningDate: { type: Date },
   currentAdvance: { type: Number, default: 0 },
   remainingAdvanceMonths: { type: Number, default: 0 },

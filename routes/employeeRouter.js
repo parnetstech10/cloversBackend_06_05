@@ -1,5 +1,6 @@
 import express from "express";
 import { addEmployee, deleteEmployee, editEmployee, getEmployee, getEmployeeById } from "../controllers/employeeController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const employeeRoutes = express.Router();
 
@@ -16,6 +17,8 @@ var storage = multer.diskStorage({
 
 const upload = multer();
 
+// Apply auth middleware to all routes
+employeeRoutes.use(protect);
 
 employeeRoutes.post("/add", upload.any()  , addEmployee);
 employeeRoutes.get("/get", getEmployee);
