@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import AdminModel from '../models/adminModel.js';
 import SubAdminModel from '../models/subAdmin.js';
+import Employee from '../models/employeeModel.js';
 
 export const protect = async (req, res, next) => {
   let token;
@@ -26,12 +27,22 @@ export const protect = async (req, res, next) => {
 
       // Get user from token and attach to request object
       // Try to find user in different models
+      console.log("Auth middleware - Searching for user ID:", decoded.id);
+      
       let user = await User.findById(decoded.id).select('-password');
+      console.log("Auth middleware - User model result:", user ? "Found" : "Not found");
+      
       if (!user) {
         user = await AdminModel.findById(decoded.id).select('-password');
+        console.log("Auth middleware - AdminModel result:", user ? "Found" : "Not found");
       }
       if (!user) {
         user = await SubAdminModel.findById(decoded.id).select('-password');
+        console.log("Auth middleware - SubAdminModel result:", user ? "Found" : "Not found");
+      }
+      if (!user) {
+        user = await Employee.findById(decoded.id).select('-password');
+        console.log("Auth middleware - Employee model result:", user ? "Found" : "Not found");
       }
       
       req.user = user;

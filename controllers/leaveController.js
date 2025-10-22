@@ -138,6 +138,22 @@ res.status(200).json({
 export const updateLeaveStatus = async (req, res) => {
   const { leaveId } = req.params;
   const { status, rejectionReason, adminNotes } = req.body;
+  
+  console.log("=== UPDATE LEAVE STATUS DEBUG ===");
+  console.log("req.user:", req.user);
+  console.log("req.user type:", typeof req.user);
+  console.log("req.user is null:", req.user === null);
+  console.log("req.user is undefined:", req.user === undefined);
+  
+  // Check if user is authenticated
+  if (!req.user) {
+    console.log("User not found, returning 401");
+    return res.status(401).json({ 
+      success: false, 
+      message: "User not authenticated or not found" 
+    });
+  }
+  
   const approvedBy = req.user._id;
   const approvedByName = req.user.Member_Name || req.user.username || req.user.name;
 
