@@ -320,3 +320,49 @@ export const markLeaveProcessed = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// Update leave request
+export const updateLeaveRequest = async (req, res) => {
+  try {
+    const { leaveId } = req.params;
+    const updateData = req.body;
+
+    console.log("Update leave request:", { leaveId, updateData });
+
+    // Find the leave request
+    const leaveRequest = await LeaveModel.findById(leaveId);
+    if (!leaveRequest) {
+      return res.status(404).json({ success: false, message: "Leave request not found" });
+    }
+
+    // Calculate duration if dates are being updated
+    if (updateData.fromDate || updateData.toDate) {
+      const fromDate = updateData.fromDate || leaveRequest.fromDate;
+      const toDate = updateData.toDate || leaveRequest.toDate;
+      const startDate = new Date(fromDate);
+      const endDate = new Date(toDate);
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      updateData.leaveDuration = diffDays;
+    }
+
+    // Update the leave request
+    const updatedLeave = await LeaveModel.findByIdAndUpdate(
+      leaveId,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('employeeId', 'name email department position');
+
+    console.log("Leave request updated successfully:", updatedLeave);
+
+    res.status(200).json({
+      success: true,
+      message: "Leave request updated successfully",
+      data: updatedLeave
+    });
+
+  } catch (error) {
+    console.error("Error updating leave request:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};

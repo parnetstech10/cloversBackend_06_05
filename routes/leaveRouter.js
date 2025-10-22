@@ -9,7 +9,8 @@ import {
   getEmployeeLeaveBalance,
   cancelLeaveRequest,
   getLeavesForPayroll,
-  markLeaveProcessed
+  markLeaveProcessed,
+  updateLeaveRequest
 } from "../controllers/leaveController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -41,6 +42,9 @@ leaveRouter.get("/employee/:employeeId/balance", getEmployeeLeaveBalance);
 
 // Update leave status (approve/reject)
 leaveRouter.put("/status/:leaveId", updateLeaveStatus);
+
+// Update leave request (edit details)
+leaveRouter.put("/:leaveId", updateLeaveRequest);
 
 // Cancel leave request
 leaveRouter.put("/cancel/:leaveId", cancelLeaveRequest);

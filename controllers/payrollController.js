@@ -1,6 +1,24 @@
 import Payroll from '../models/payrollModel.js';
 import Employee from '../models/employeeModel.js';
 
+// Get payroll records for a specific employee
+export const getPayrollByEmployee = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+    
+    const payrolls = await Payroll.find({ employeeId })
+      .populate('employeeId', 'name email phone employeeId')
+      .sort({ year: -1, month: -1 });
+    
+    console.log(`Payroll records found for employee ${employeeId}:`, payrolls.length);
+    
+    res.status(200).json({ success: true, data: payrolls });
+  } catch (error) {
+    console.error("Error in getPayrollByEmployee:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Get all payroll records
 export const getAllPayrolls = async (req, res) => {
   try {
