@@ -101,9 +101,24 @@ attendanceRouter.get("/", async (req, res) => {
 // Fetch attendance history for a single employee
 attendanceRouter.get("/history/:employeeId", async (req, res) => {
   const { employeeId } = req.params;
+  const { startDate, endDate } = req.query;
+  
   try {
-    // Get all attendance records for this employee, sorted by date descending
-    const records = await AttendanceModel.find({ employeeId }).sort({ date: -1 });
+    let query = { employeeId };
+    
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      query.date = { $gte: start, $lte: end };
+    }
+    
+    // Get attendance records for this employee within date range, sorted by date descending
+    const records = await AttendanceModel.find(query).sort({ date: -1 });
     
     res.status(200).json(records);
   } catch (error) {

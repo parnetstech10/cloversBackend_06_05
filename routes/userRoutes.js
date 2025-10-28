@@ -18,6 +18,7 @@ import {
   resetPasswordWithOtp
   // >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
 } from '../controllers/userController.js';
+import { updateFCMToken } from '../controllers/fcmController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 import multer from 'multer';
@@ -42,6 +43,9 @@ router.post('/password-otp', sendPasswordOtp);
 router.post('/password-otp/verify', verifyPasswordOtp);
 router.post('/password-otp/reset', resetPasswordWithOtp);
 router.get("/getAllusers",getAllusers);
+
+// FCM Token Management Routes
+router.post('/update-fcm-token', updateFCMToken);
 // <<<<<<< HEAD
 // router.put("/updatemember/:id",upload.any(),protect,updateMember)
 router.put("/updateMemberImg/:id",upload.any(),updateMemberImg)

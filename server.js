@@ -51,6 +51,11 @@ import employeeAuthRoutes from './routes/employeeAuth.js';
 import taskRoutes from "./routes/taskRoutes.js";
 import leaveRouter from "./routes/leaveRouter.js";
 import shiftRoutes from "./routes/shiftRoutes.js";
+import renewalRoutes from "./routes/renewalRoutes.js";
+import fcmRoutes from "./routes/fcmRoutes.js";
+import testNotificationRoutes from "./routes/testNotificationRoutes.js";
+import { startMembershipExpiryScheduler } from "./utils/membershipExpiryScheduler.js";
+
 
 dotenv.config();
 
@@ -119,6 +124,9 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/inventory-distribution', inventoryDistributionRoutes);
 app.use("/api/facility/bookfacility",BookfacilityRoutes)
 app.use('/api/payroll',payrollRoutes)
+app.use('/api/renewals', renewalRoutes)
+app.use('/api/fcm', fcmRoutes)
+app.use('/api/test-notifications', testNotificationRoutes)
 // >>>>>>> 924daf026b58d82e80af24cfa0b4db1a4905733c
 // app.use("/", (req, res) => {
 //   res.status(200).json("Welcom to clovers");
@@ -141,4 +149,7 @@ app.get('*', (req, res) => {
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  
+  // Start membership expiry scheduler
+  startMembershipExpiryScheduler();
 });

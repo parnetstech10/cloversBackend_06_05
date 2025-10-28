@@ -8,10 +8,12 @@ import {
   deleteMembership,
   renewMembership,
   getAllRenewals,
+  createRenewal,
   getActiveMemberships,
   changeMemberStatus,
   getAllActivecard
 } from '../controllers/membershipController.js';
+import { scanMembershipByCode } from '../controllers/membershipController.js';
 
 const router = Router();
 
@@ -23,9 +25,12 @@ router.get('/', getMemberships);
 
 // IMPORTANT: Put /renewals BEFORE the /:id route
 router.get('/renewals', getAllRenewals);
+router.post('/renewals', createRenewal);
 router.put('/renewals/:id', changeMemberStatus);
 router.get("/activemembership/:id",getActiveMemberships);
 router.get("/allactivecard/:id",getAllActivecard);
+// QR/Code scan endpoint
+router.get('/scan/:code', scanMembershipByCode);
 
 // GET membership by ID
 router.get('/:id', getMembershipById);

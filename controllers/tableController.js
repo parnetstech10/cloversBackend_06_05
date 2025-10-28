@@ -158,7 +158,7 @@ export const updateTableStatus = async (req, res) => {
     try {
         const { tableNo, status } = req.body;
 
-        if (!["available", "reserved", "booked"].includes(status)) {
+        if (!["available", "reserved", "maintenance"].includes(status)) {
             return res.status(400).json({ message: "Invalid status" });
         }
 
@@ -212,7 +212,7 @@ export const updateTable = async (req, res) => {
         }
 
         // Validate status if provided
-        if (status && !["available", "reserved", "booked"].includes(status)) {
+        if (status && !["available", "reserved", "maintenance"].includes(status)) {
             return res.status(400).json({ message: "Invalid status" });
         }
 

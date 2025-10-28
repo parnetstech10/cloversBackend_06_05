@@ -489,20 +489,26 @@ export const updateGuest = async (req, res) => {
     if (req.files?.length) {
       for (const file of req.files) {
         if (file.fieldname === "ADHAR") {
-          guestData.ADHAR = await uploadFile2(file, "guest");
+          updateData.ADHAR = await uploadFile2(file, "guest");
         }
         if (file.fieldname === "PAN") {
-          guestData.PAN = await uploadFile2(file, "guest");
+          updateData.PAN = await uploadFile2(file, "guest");
         }
         if (file.fieldname === "Photo") {
-          guestData.Photo = await uploadFile2(file, "guest");
+          updateData.Photo = await uploadFile2(file, "guest");
         }
       }
-      guestData.isDoc = true;
+      updateData.isDoc = true;
     }
     
-  
-            updateData["isDoc"]=true;
+    // Handle date conversion for utilizedDate
+    if (updateData.utilizedDate && typeof updateData.utilizedDate === 'string') {
+      updateData.utilizedDate = new Date(updateData.utilizedDate);
+    }
+    
+    console.log('Updating guest with data:', updateData);
+    console.log('Guest ID:', id);
+    
     const updatedGuest = await Guest.findByIdAndUpdate(
       id,
       updateData,
@@ -516,6 +522,8 @@ export const updateGuest = async (req, res) => {
       });
     }
 
+    console.log('Updated guest:', updatedGuest.isUtilized);
+    
     res.status(200).json({
       success: true,
       message: "Guest updated successfully",

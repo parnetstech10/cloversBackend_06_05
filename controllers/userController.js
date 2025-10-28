@@ -6,6 +6,7 @@ import { uploadFile2 } from '../middleware/aws.js';
 import { getNextSequence } from '../models/Counter.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import FCMtoken from '../models/FCMtoken.js';
 
 const validateMember = [
   // check("Membership_No").notEmpty().withMessage("Membership number is required"),
@@ -40,7 +41,18 @@ export const registerUser = async (req, res) => {
 
 
   try {
-    const {  Member_Name, Mobile_Number, email, password, role, membershipStatus, membershipExpiryDate } = req.body;
+    const {  
+      Member_Name, 
+      Mobile_Number, 
+      email, 
+      password, 
+      role, 
+      membershipStatus, 
+      membershipExpiryDate,
+      fcmToken,        // Add FCM token
+      platform,        // Add platform (android/ios)
+      deviceId         // Add device ID
+    } = req.body;
     console.log("reqbody",req.body);
     
     const Membership_No = await generateMembershipNo();
@@ -73,6 +85,28 @@ export const registerUser = async (req, res) => {
   // console.log("newMember",newMember);
   
     await newMember.save();
+    
+    // Store FCM token if provided
+    if (fcmToken && platform) {
+      try {
+        await FCMtoken.findOneAndUpdate(
+          { userId: newMember._id },
+          {
+            fcmToken: fcmToken,
+            deviceId: deviceId || `device_${newMember._id}_${Date.now()}`,
+            platform: platform,
+            isActive: true,
+            lastUpdated: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        console.log('✅ FCM token stored for new user:', newMember._id);
+      } catch (fcmError) {
+        console.error('Error storing FCM token:', fcmError);
+        // Don't fail registration if FCM token storage fails
+      }
+    }
+    
     res.status(201).json({
       id: newMember._id,
      ...newMember,
@@ -87,7 +121,7 @@ export const registerUser = async (req, res) => {
 
 
 export const authUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, fcmToken, platform, deviceId } = req.body;
 
   try {
     const newMember = await User.findOne({ email });
@@ -96,6 +130,27 @@ export const authUser = async (req, res) => {
     newMember.token=generateToken(newMember._id);
 
     newMember.id=newMember._id;
+    
+    // Update FCM token if provided
+    if (fcmToken && platform) {
+      try {
+        await FCMtoken.findOneAndUpdate(
+          { userId: newMember._id },
+          {
+            fcmToken: fcmToken,
+            deviceId: deviceId || `device_${newMember._id}_${Date.now()}`,
+            platform: platform,
+            isActive: true,
+            lastUpdated: new Date()
+          },
+          { upsert: true, new: true }
+        );
+        console.log('✅ FCM token updated for user:', newMember._id);
+      } catch (fcmError) {
+        console.error('Error updating FCM token:', fcmError);
+        // Don't fail login if FCM token update fails
+      }
+    }
     
       res.json({
         token: generateToken(newMember._id),

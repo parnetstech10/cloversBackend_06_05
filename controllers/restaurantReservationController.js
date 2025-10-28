@@ -363,3 +363,36 @@ export const makechangeStatus=async(req,res)=>{
     
   }
 }
+
+// Update a reservation
+export const updateReservation = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const reservation = await RestaurantReservationModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: "Reservation not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Reservation updated successfully",
+      data: reservation,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error updating reservation",
+      error: error.message,
+    });
+  }
+};

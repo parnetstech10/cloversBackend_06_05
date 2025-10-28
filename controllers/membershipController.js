@@ -231,12 +231,178 @@ export const getAllActivecard=async(req,res)=>{
 export const getAllRenewals = async (req, res) => {
   // console.log('getAllRenewals called');
   try {
-    const data = await Renewal.find({}).sort({ createdAt: -1 }).populate('membershipId'); 
-    // console.log('Renewals fetched:', data); 
-    return res.json(data);
+    const data = await Renewal.find({}).sort({ createdAt: -1 }).populate({
+      path: 'membershipId',
+      select: '_id Membership_No App_No Member_Name Mobile_Number email walletBalance role status'
+    });
+    
+    // Update renewals with missing benefits by fetching from Membership collection
+    const updatedData = await Promise.all(data.map(async (renewal) => {
+      // If benefits are empty or missing, try to fetch from Membership
+      if (!renewal.benefit || renewal.benefit.length === 0) {
+        try {
+          const membershipName = renewal.membershipTypeName || renewal.membershipName;
+          if (membershipName) {
+            // Look for membership by type (matching the membership type name)
+            const membership = await Membership.findOne({ type: membershipName });
+            if (membership && membership.benefits && membership.benefits.length > 0) {
+              // Update the renewal in database with benefits
+              renewal.benefit = membership.benefits;
+              await renewal.save();
+              console.log(`Updated benefits for ${membershipName}:`, membership.benefits);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching benefits for renewal:', error);
+          // Continue without updating if lookup fails
+        }
+      }
+      return renewal;
+    }));
+    
+    return res.json(updatedData);
   } catch (error) {
     console.error('Error in getAllRenewals:', error);
     return res.status(500).json({ error: 'Failed to fetch renewals' });
+  }
+};
+
+// Scan helper: return consolidated member details by renewal id or membership number
+export const scanMembershipByCode = async (req, res) => {
+  try {
+    const rawCode = (req.params.code || '').toString().trim();
+    if (!rawCode) {
+      return res.status(400).json({ success: false, message: 'Scan code is required' });
+    }
+
+    const code = rawCode.toUpperCase();
+
+    // 1) Try renewal by ObjectId string
+    let renewal = null;
+    try {
+      renewal = await Renewal.findById(code).populate({
+        path: 'membershipId',
+        select: '_id Membership_No App_No Member_Name Mobile_Number email walletBalance role status'
+      });
+    } catch (_) {
+      // not an ObjectId; ignore
+    }
+
+    // 2) If not found, try renewal by membership numbers
+    if (!renewal) {
+      renewal = await Renewal.findOne({}).populate({
+        path: 'membershipId',
+        select: '_id Membership_No App_No Member_Name Mobile_Number email walletBalance role status'
+      }).then(async (first) => {
+        // We need an actual filter; do separate query to leverage populated membership fields
+        const renewals = await Renewal.find({}).sort({ createdAt: -1 }).populate({
+          path: 'membershipId',
+          select: '_id Membership_No App_No Member_Name Mobile_Number email walletBalance role status'
+        });
+        return renewals.find(r => {
+          const memNo = (r?.membershipId?.Membership_No || '').toString().trim().toUpperCase();
+          const appNo = (r?.membershipId?.App_No || '').toString().trim().toUpperCase();
+          return memNo === code || appNo === code;
+        }) || null;
+      });
+    }
+
+    // 3) Fallback: find user directly by membership number/app no
+    let member = renewal?.membershipId || null;
+    if (!member) {
+      member = await userModel.findOne({
+        $or: [
+          { Membership_No: code },
+          { App_No: isNaN(Number(code)) ? undefined : Number(code) }
+        ].filter(Boolean)
+      });
+    }
+
+    if (!renewal && !member) {
+      return res.status(404).json({ success: false, message: 'No matching member or renewal found' });
+    }
+
+    // Consolidate response
+    const response = {
+      name: String(member?.Member_Name || renewal?.userName || ''),
+      membership: String(renewal?.membershipTypeName || renewal?.membershipName || ''),
+      phone: String(member?.Mobile_Number || member?.['Phone No'] || ''),
+      email: String(member?.email || ''),
+      wallet: Number(member?.walletBalance ?? 0) || 0,
+      memberId: String(member?._id || ''),
+      membershipNo: String(member?.Membership_No || ''),
+      appNo: member?.App_No ?? null
+    };
+
+    return res.status(200).json({ success: true, data: response });
+  } catch (error) {
+    console.error('scanMembershipByCode error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+export const createRenewal = async (req, res) => {
+  try {
+    const renewalData = req.body;
+    
+    // Add default expiry date if not provided (1 year from now)
+    if (!renewalData.membershipExpairy) {
+      const defaultExpiry = new Date();
+      defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
+      renewalData.membershipExpairy = defaultExpiry;
+    }
+    
+    // Ensure status is set to Pending if not provided
+    if (!renewalData.status) {
+      renewalData.status = 'Pending';
+    }
+    
+    // Handle membershipType - if it's a string, store it as membershipTypeName
+    if (renewalData.membershipType && typeof renewalData.membershipType === 'string') {
+      // Store the string value as membershipTypeName
+      renewalData.membershipTypeName = renewalData.membershipType;
+      // Remove membershipType since it expects ObjectId
+      delete renewalData.membershipType;
+    }
+    
+    // If membershipName is not set, use membershipTypeName
+    if (!renewalData.membershipName && renewalData.membershipTypeName) {
+      renewalData.membershipName = renewalData.membershipTypeName;
+    }
+    
+    // Fetch benefits from Membership collection if not provided
+    if (!renewalData.benefit || renewalData.benefit.length === 0) {
+      try {
+        const membershipName = renewalData.membershipTypeName || renewalData.membershipName;
+        // Look for membership by type (matching the membership type name)
+        const membership = await Membership.findOne({ type: membershipName });
+        if (membership && membership.benefits && membership.benefits.length > 0) {
+          renewalData.benefit = membership.benefits;
+          console.log(`Fetched benefits for ${membershipName}:`, membership.benefits);
+        }
+      } catch (error) {
+        console.error('Error fetching benefits from membership:', error);
+        // Continue without benefits if lookup fails
+      }
+    }
+    
+    const renewal = new Renewal(renewalData);
+    await renewal.save();
+
+    res.json({ 
+      success: true, 
+      renewalId: renewal._id,
+      message: 'Renewal created successfully',
+      _id: renewal._id,
+      id: renewal._id
+    });
+  } catch (error) {
+    console.error('Error creating renewal:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
 };
 
@@ -244,17 +410,27 @@ export const changeMemberStatus = async(req,res) =>{
   try {
     const { status } = req.body;
 
-    const updatedRenewal = await Renewal.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-
-    if (!updatedRenewal) {
+    const renewal = await Renewal.findById(req.params.id);
+    
+    if (!renewal) {
       return res.status(404).json({ message: "Membership not found" });
     }
 
-    res.json({ message: "Status updated", renewal: updatedRenewal });
+    // Update status
+    renewal.status = status;
+    
+    // If status is being changed to "Approved", generate or update QR code
+    if (status === "Approved" && !renewal.qrCode) {
+      // Generate QR code with renewal data
+      const qrData = `renewalId:${renewal._id} | userName:${renewal.userName} | membership:${renewal.membershipName}`;
+      const qrCodeDataURL = await QRCode.toDataURL(qrData);
+      renewal.qrCode = qrCodeDataURL;
+    }
+    
+    // Save the updated renewal
+    await renewal.save();
+
+    res.json({ message: "Status updated", renewal: renewal });
   } catch (error) {
     console.error("Error updating status:", error);
     res.status(500).json({ message: "Internal server error" });

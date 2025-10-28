@@ -53,7 +53,10 @@ const guestSchema = new mongoose.Schema(
       type: String,
       enum: ["pending_otp", "verified", "completed"],
       default: "pending_otp"
-    }
+    },
+    // Utilization tracking
+    isUtilized: { type: Boolean, default: false },
+    utilizedDate: { type: Date }
   },
   {
     timestamps: true,
@@ -65,6 +68,7 @@ guestSchema.index({ Membership_No: 1 });
 guestSchema.index({ Mobile_Number: 1 });
 guestSchema.index({ validUntil: 1 });
 guestSchema.index({ registrationStatus: 1 });
+guestSchema.index({ isUtilized: 1 });
 
 const Guest = mongoose.model('Guest', guestSchema);
 
