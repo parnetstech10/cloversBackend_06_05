@@ -275,12 +275,60 @@ export const scanMembershipByCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Scan code is required' });
     }
 
-    const code = rawCode.toUpperCase();
+    // Accept various QR payloads: "renewalId:... | ...", lines, or plain text
+    let extracted = rawCode;
+    const tryExtract = (text) => {
+      const t = text.trim();
+      // pipe format: key:value | key:value
+      if (t.includes('|')) {
+        for (const part of t.split('|')) {
+          const [k, v] = part.split(':').map(s => (s || '').trim());
+          if ((k || '').toLowerCase() === 'renewalid' && v) return v;
+        }
+      }
+      // multi-line format
+      if (t.includes('\n')) {
+        for (const line of t.split('\n')) {
+          const [k, v] = line.split(':').map(s => (s || '').trim());
+          if ((k || '').toLowerCase().includes('renewalid') && v) return v;
+          if ((k || '').toLowerCase() === 'id' && v) return v;
+        }
+      }
+      // key:value single
+      if (t.toLowerCase().startsWith('renewalid:')) {
+        return t.substring('renewalid:'.length).trim();
+      }
+      return t;
+    };
+    extracted = tryExtract(rawCode);
+    const rawNormalized = extracted.toString().trim();
+    const upperForHumanCodes = rawNormalized.toUpperCase();
+
+    // 0) Fast-path: if it looks like a Mongo ObjectId, return member by id directly
+    const looksLikeObjectId = /^[a-f\d]{24}$/i.test(rawNormalized);
+    if (looksLikeObjectId) {
+      try {
+        const memberDirect = await userModel.findById(rawNormalized);
+        if (memberDirect) {
+          const response = {
+            name: String(memberDirect.Member_Name || ''),
+            membership: '',
+            phone: String(memberDirect.Mobile_Number || memberDirect['Phone No'] || ''),
+            email: String(memberDirect.email || ''),
+            wallet: Number(memberDirect.walletBalance ?? 0) || 0,
+            memberId: String(memberDirect._id || ''),
+            membershipNo: String(memberDirect.Membership_No || ''),
+            appNo: memberDirect.App_No ?? null
+          };
+          return res.status(200).json({ success: true, data: response, source: 'memberById' });
+        }
+      } catch(_) {}
+    }
 
     // 1) Try renewal by ObjectId string
     let renewal = null;
     try {
-      renewal = await Renewal.findById(code).populate({
+      renewal = await Renewal.findById(rawNormalized).populate({
         path: 'membershipId',
         select: '_id Membership_No App_No Member_Name Mobile_Number email walletBalance role status'
       });
@@ -302,7 +350,7 @@ export const scanMembershipByCode = async (req, res) => {
         return renewals.find(r => {
           const memNo = (r?.membershipId?.Membership_No || '').toString().trim().toUpperCase();
           const appNo = (r?.membershipId?.App_No || '').toString().trim().toUpperCase();
-          return memNo === code || appNo === code;
+          return memNo === upperForHumanCodes || appNo === upperForHumanCodes;
         }) || null;
       });
     }
@@ -310,19 +358,55 @@ export const scanMembershipByCode = async (req, res) => {
     // 3) Fallback: find user directly by membership number/app no
     let member = renewal?.membershipId || null;
     if (!member) {
-      member = await userModel.findOne({
-        $or: [
-          { Membership_No: code },
-          { App_No: isNaN(Number(code)) ? undefined : Number(code) }
-        ].filter(Boolean)
-      });
+      const queries = [];
+      queries.push({ Membership_No: upperForHumanCodes });
+      const maybeNum = Number(rawNormalized);
+      if (!Number.isNaN(maybeNum)) queries.push({ App_No: maybeNum });
+      // also allow scanning of raw MongoId for the member
+      try {
+        if (!renewal) {
+          member = await userModel.findById(rawNormalized);
+        }
+      } catch (_) {}
+      if (!member) {
+        // case-insensitive match for membership number (exact OR contains), and trimmed variants
+        const escaped = upperForHumanCodes.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const altQueries = [
+          { Membership_No: { $regex: `^${escaped}$`, $options: 'i' } },
+          { Membership_No: { $regex: escaped, $options: 'i' } },
+          { Membership_No: rawNormalized.trim() }
+        ];
+        // If code matches CCLMSU###, try numeric suffix as App_No
+        const m = upperForHumanCodes.match(/CCLMSU\s*0*(\d+)/i);
+        if (m && m[1]) {
+          altQueries.push({ App_No: Number(m[1]) });
+        }
+        member = await userModel.findOne({ $or: [...queries, ...altQueries] });
+      }
+    }
+
+    // 4) If still not found, try fuzzy suggestions by numeric suffix
+    let suggestions = [];
+    if (!member) {
+      try {
+        const digits = (upperForHumanCodes.match(/(\d+)/) || [null, ''])[1];
+        if (digits) {
+          const rx = new RegExp(digits.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i');
+          const maybe = await userModel.find({ Membership_No: { $regex: rx } }).limit(5);
+          suggestions = maybe.map(u => ({ id: u._id, membershipNo: u.Membership_No, appNo: u.App_No }));
+          if (maybe.length > 0) {
+            // if exactly one suggestion, adopt it as match
+            if (maybe.length === 1) member = maybe[0];
+          }
+        }
+      } catch(_) {}
     }
 
     if (!renewal && !member) {
-      return res.status(404).json({ success: false, message: 'No matching member or renewal found' });
+      return res.status(404).json({ success: false, message: 'No matching member or renewal found', debug: { code: rawNormalized, upper: upperForHumanCodes }, suggestions });
     }
 
-    // Consolidate response
+    // Consolidate response (even if renewal is missing)
     const response = {
       name: String(member?.Member_Name || renewal?.userName || ''),
       membership: String(renewal?.membershipTypeName || renewal?.membershipName || ''),
@@ -344,30 +428,58 @@ export const scanMembershipByCode = async (req, res) => {
 export const createRenewal = async (req, res) => {
   try {
     const renewalData = req.body;
-    
-    // Add default expiry date if not provided (1 year from now)
+
+    // Normalize membership type/name
+    if (renewalData.membershipType && typeof renewalData.membershipType === 'string') {
+      renewalData.membershipTypeName = renewalData.membershipType;
+      delete renewalData.membershipType;
+    }
+    if (!renewalData.membershipName && renewalData.membershipTypeName) {
+      renewalData.membershipName = renewalData.membershipTypeName;
+    }
+
+    // Calculate expiry based on days configured on membership type, or explicit payload
     if (!renewalData.membershipExpairy) {
-      const defaultExpiry = new Date();
-      defaultExpiry.setFullYear(defaultExpiry.getFullYear() + 1);
-      renewalData.membershipExpairy = defaultExpiry;
+      let totalDays = 0;
+      // 1) explicit days in payload (preferred when admin selects period)
+      if (typeof renewalData.day === 'number' && renewalData.day > 0) {
+        totalDays = renewalData.day;
+      }
+      // 2) renewalPeriod.days from UI
+      else if (renewalData.renewalPeriod && typeof renewalData.renewalPeriod.days === 'number' && renewalData.renewalPeriod.days > 0) {
+        totalDays = renewalData.renewalPeriod.days;
+      }
+      // 3) lookup by membership type name in Membership collection (membershipday)
+      else if (renewalData.membershipTypeName || renewalData.membershipName) {
+        try {
+          const typeName = renewalData.membershipTypeName || renewalData.membershipName;
+          const membership = await Membership.findOne({ type: typeName });
+          if (membership && typeof membership.membershipday === 'number' && membership.membershipday > 0) {
+            totalDays = membership.membershipday;
+          }
+        } catch (_) {}
+      }
+
+      // 4) Final fallback: 30 days (avoid misleading 1-year default)
+      if (!totalDays || Number.isNaN(totalDays)) {
+        totalDays = 30;
+      }
+
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setDate(expiry.getDate() + Number(totalDays));
+      renewalData.membershipExpairy = expiry;
+      // also capture renewalPeriod.days if not present
+      if (!renewalData.renewalPeriod) {
+        renewalData.renewalPeriod = { label: `${totalDays} Days`, days: Number(totalDays) };
+      } else if (!renewalData.renewalPeriod.days) {
+        renewalData.renewalPeriod.days = Number(totalDays);
+      }
     }
     
     // Ensure status is set to Pending if not provided
     if (!renewalData.status) {
       renewalData.status = 'Pending';
-    }
-    
-    // Handle membershipType - if it's a string, store it as membershipTypeName
-    if (renewalData.membershipType && typeof renewalData.membershipType === 'string') {
-      // Store the string value as membershipTypeName
-      renewalData.membershipTypeName = renewalData.membershipType;
-      // Remove membershipType since it expects ObjectId
-      delete renewalData.membershipType;
-    }
-    
-    // If membershipName is not set, use membershipTypeName
-    if (!renewalData.membershipName && renewalData.membershipTypeName) {
-      renewalData.membershipName = renewalData.membershipTypeName;
     }
     
     // Fetch benefits from Membership collection if not provided

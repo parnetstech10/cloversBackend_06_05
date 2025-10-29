@@ -288,6 +288,33 @@ export const deleteUser = async (req, res) => {
   }
 };
 
+// Debug/utility: lookup member by Membership_No/App_No/_id
+export const findMemberByCode = async (req, res) => {
+  try {
+    const raw = (req.params.code || '').toString().trim();
+    if (!raw) return res.status(400).json({ success: false, message: 'code required' });
+    const upper = raw.toUpperCase();
+    let user = null;
+    // try by id
+    try { user = await User.findById(raw); } catch(_) {}
+    if (!user) {
+      const maybeNum = Number(raw);
+      const or = [];
+      if (!Number.isNaN(maybeNum)) or.push({ App_No: maybeNum });
+      or.push({ Membership_No: upper });
+      or.push({ Membership_No: { $regex: `^${upper.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, $options: 'i' } });
+      or.push({ Membership_No: { $regex: upper.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'), $options: 'i' } });
+      const m = upper.match(/CCLMSU\s*0*(\d+)/i);
+      if (m && m[1]) or.push({ App_No: Number(m[1]) });
+      user = await User.findOne({ $or: or });
+    }
+    if (!user) return res.status(404).json({ success: false, message: 'not found', debug: { raw, upper } });
+    return res.status(200).json({ success: true, data: user });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
 // Minimal forgot password handler (stub). Integrate email sending later.
 export const forgotPassword = async (req, res) => {
   try {

@@ -57,4 +57,7 @@ router.put("/updatemember/:id",upload.any(),updateMember)
 // Protected routes
 router.get('/profile', protect, getUserProfile);
 router.delete("/deletemember/:id",  deleteUser);
+// Debug lookup
+import { findMemberByCode } from '../controllers/userController.js';
+router.get('/find/:code', findMemberByCode);
 export default router;

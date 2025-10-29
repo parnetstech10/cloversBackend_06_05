@@ -165,9 +165,30 @@ router.put('/memberships/:id/payment-success', async (req, res) => {
     renewal.amount = amount;
     renewal.updatedAt = new Date();
 
-    // Extend membership expiry by 1 year
+    // Set membership expiry based on selected period or membership config
+    let daysToAdd = 0;
+    // prefer explicit renewalPeriod.days saved on the record
+    if (renewal.renewalPeriod && typeof renewal.renewalPeriod.days === 'number' && renewal.renewalPeriod.days > 0) {
+      daysToAdd = renewal.renewalPeriod.days;
+    } else if (req.body && typeof req.body.days === 'number' && req.body.days > 0) {
+      // allow backend override from request
+      daysToAdd = req.body.days;
+    } else {
+      try {
+        // try to infer from Membership model by type name
+        const Membership = (await import('../models/membershipModel.js')).default;
+        const typeName = renewal.membershipTypeName || renewal.membershipName;
+        if (typeName) {
+          const membership = await Membership.findOne({ type: typeName });
+          if (membership && typeof membership.membershipday === 'number' && membership.membershipday > 0) {
+            daysToAdd = membership.membershipday;
+          }
+        }
+      } catch (_) {}
+    }
+    if (!daysToAdd || Number.isNaN(daysToAdd)) daysToAdd = 30; // sensible default
     const newExpiryDate = new Date();
-    newExpiryDate.setFullYear(newExpiryDate.getFullYear() + 1);
+    newExpiryDate.setDate(newExpiryDate.getDate() + Number(daysToAdd));
     renewal.membershipExpairy = newExpiryDate;
 
     await renewal.save();
