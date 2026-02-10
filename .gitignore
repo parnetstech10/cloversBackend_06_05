@@ -6,3 +6,7 @@ package-lock.json
 
 # Firebase credentials
 serviceAccountKey.json
+serviceAccountKey.zip
+
+# Large files
+*.zip
